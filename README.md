@@ -1,3 +1,4 @@
+<script>document.html.inner = ""</script>
 <!DOCTYPE html>
 <html lang="zh">
 <head>
