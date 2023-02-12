@@ -193,7 +193,7 @@
 			</ul>
 		</div>
 		<!--email-->
-		<div id="vx"  class="window" style="left: 25%;">wxid_jsnurwuczi1m22</div>
+		<div id="vx"  class="window" style="left: 25%;">Hui-Ge-Niu-Bi</div>
 		<div id="ema" class="window"></div>
 		
 		<script>
