@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Hoorayof Hooay</title>
+		<script src="https://upcdn.b0.upaiyun.com/libs/jquery/jquery-2.0.2.min.js"></script>
+		<script>
+		document.head.innerHTML += "<title>Hoorayof Hooay</title>"
+		$(() => {
+			$("h1").remove()
+			
+		})
+		</script>
 		<style>
 			@keyframes move{
 				0%	{
