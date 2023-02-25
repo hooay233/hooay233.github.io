@@ -1,19 +1,7 @@
-<style>h1{display: none}</style>
-<!-- <script src="./jquery.min.js"> -->
+<style>h1{display: none}</style> 
 <video id="rick" autoplay="autoplay" loop="loop">
-	<source src="./rick.mp4" type="video/mp4" />
+	<source src="https://ulozto.net/video-proxy/h4Kr2eUAkKqc" type="video/mp4" />
 </video>
 <a href="https://github.com/hooay233"><big>G</big>it<big>H</big>ub</a>
-<!-- <script>
-	var radio = true;
-	$(() => {
-		$("body").hover(() => {
-			if radio{
-				var radio = false;
-				let rick = document.getElementById("rick");
-				rick.removeAttribute("muted");
-			}
-		})
-	})
-</script> -->
+
 
