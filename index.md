@@ -1,7 +1,7 @@
 <style>h1{display: none}</style>
 <!-- <script src="./jquery.min.js"> -->
 <video id="rick" autoplay="autoplay" loop="loop">
-	<source src="./rick.mp4" type="video/mp4"></source>
+	<source src="./rick.mp4" type="video/mp4" />
 </video>
 <a href="https://github.com/hooay233"><big>G</big>it<big>H</big>ub</a>
 <!-- <script>
