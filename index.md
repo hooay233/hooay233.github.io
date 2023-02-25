@@ -1,7 +1,7 @@
 <style>h1{display: none}</style>
 <script src="https://upcdn.b0.upaiyun.com/libs/jquery/jquery-2.0.2.min.js">
 <video id="rick" muted autoplay="autoplay" loop="loop">
-	<source src="https://www.nevergonnagiveyou.ml/rick.mp4" type="video/mp4"></source>
+	<source src="./rick.mp4" type="video/mp4"></source>
 </video>
 <script>
 	var radio = true;
