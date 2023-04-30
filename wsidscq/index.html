@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>沃式id生成器</title>
+  <script type="text/javascript">
+	aData = [
+		"惊悚",
+		"地狱",
+		"扭曲的",
+		"哥特式",
+		"杀马特",
+		"畸形",
+		"易燃易爆的",
+		"反伤100%的",
+		"会员制",
+		"恶臭",
+		"你是一个一个一个",
+		"无敌",
+		"阎王",
+		"硫酸",
+		"正在上厕所的",
+		"疯狂",
+		"寒冰",
+		"烈焰",
+		"迷雾中的",
+		"爬行中的",
+		"pua过热的",
+		"死亡",
+		"刚刚被cpu的",
+		"emo的",
+		"倒立行走的",
+		"高度8848.86千米的",
+		"没考人类资格证的",
+		"碎裂的",
+		"有触手的",
+		"地府",
+		"九头",
+		"一次性",
+		"炸裂",
+		"碱性的",
+		"酸性的",
+    "核聚变",
+		"核裂变",
+		"核能",
+		"含铀的",
+		"儿童",
+    "更适合中国宝宝的",
+		"精神分裂"
+	]
+	</script>
+	<script type="text/javascript">
+	bData = [
+		"拖拉机",
+		"饮水机",
+		"马桶",
+		"冰鸡凌",
+		"卫生纸",
+		"显示器",
+		"鼠标",
+		"键盘",
+		"鼠标垫",
+		"字典",
+		"世界名著",
+		"耳机",
+		"机箱",
+		"垃圾桶",
+		"牛奶盒",
+		"纸箱",
+		"玩偶",
+		"体温枪",
+		"夹克",
+		"吉他",
+		"尤克里里",
+		"灭火器",
+		"竖笛",
+		"卡祖笛",
+		"电音蝌蚪",
+		"挖掘机",
+		"直升机",
+		"武装直升机",
+		"沃尔玛购物袋",
+		"蛤蟆",
+		"路由器",
+		"插座",
+		"火线",
+		"零线",
+		"地线",
+		"剪刀",
+		"眼镜",
+		"U盘",
+		"指甲刀",
+		"三轮车",
+		"自行车"
+	]
+	</script>
+	<script type="text/javascript">
+		function generateString(n=1) {
+      document.getElementById("mz").innerHTML = "";
+			for (let i = 0; i < n; ++i){
+				var randomA = Math.floor(Math.random() * aData.length);
+				var randomB = Math.floor(Math.random() * bData.length);
+				var result = aData[randomA] + bData[randomB];
+        document.getElementById("mz").innerHTML += result+"\n";
+			}
+		}
+	</script>
+</head>
+<body>
+  生成个数：<input id="n" type="number" value="1"/>
+	<button onclick="generateString(document.getElementById('n').value)">点击生成id</button>
+	<br/>
+	<textarea id="mz"></textarea>
+</body>
+</html>
