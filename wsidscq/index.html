@@ -2,6 +2,7 @@
 <html>
 <head>
 	<title>沃式id生成器</title>
+	<link rel="stylesheet" href="style.css">
 	<link rel="shortcut icon" href="./warma.ico" />
   <script type="text/javascript">
 	aData = [
@@ -107,9 +108,9 @@
 	</script>
 </head>
 <body>
-  生成个数：<input id="n" type="number" value="1"/>
-	<button onclick="generateString(document.getElementById('n').value)">点击生成id</button>
-	<br/>
-	<textarea id="mz"></textarea>
+	<span class="center">生成个数: </span><input id="n" type="number" class="center" value="1"/>
+	<button class="center" onclick="generateString(document.getElementById('n').value)">点击生成id</button>
+	<br/><br/>
+	<textarea id="mz" rows="16" class="center"></textarea>
 </body>
 </html>
