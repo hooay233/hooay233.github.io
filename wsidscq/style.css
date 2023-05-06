@@ -18,12 +18,16 @@ body {
 
 button {
 	width: 127px;
-	background-color: #ff3028;}
-button, input, textarea {
+	background-color: #ff3028;
+}
+
+button, input{
 	height: 32px;
 	border-radius: 8px;
 }
 
 #mz {
-	height: 50%;
+	border-radius: 8px;
+	width: 95%;
+	max-width: 512px;
 }
