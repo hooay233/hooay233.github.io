@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script src="./dat.gui.min.js"></script>
+	<style>
+		body {
+			overflow: hidden;
+			color: rgba(255, 255, 255, 0.7);
+			font-family: monospace;
+			padding: 5px;
+			font-size: 12px;
+			-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+					user-select: none;
+			}
+
+			canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			z-index: -1;
+			}
+
+			div.hint {
+			display: none;
+			pointer-events: none;
+			}
+
+			#hint {
+			display: none;
+			}
+			#hint:checked + div {
+			display: block;
+			}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<a href="https://codepen.io/Godje/pen/RobJyX" style="color: rgba(52, 152, 219,1.0);">本页面是 https://codepen.io/Godje/pen/RobJyX 的fork，点击跳转原链接</a>
+	<label for="hint">Hint (click to hide/show)</label>
+	<input type="checkbox" id="hint"/>
+	<div class="hint">
+	<p>Click somewhere to add a point</p>
+	</div>
+</body>
+<script>
+	(function(){
+	var canvasBody = document.getElementById("canvas"),
+			canvas = canvasBody.getContext("2d"),
+			
+			w = canvasBody.width = window.innerWidth,
+			h = canvasBody.height = window.innerHeight,
+			
+			pi2 = Math.PI*2,
+			tick = 0,
+			opts = {
+				canvas: {
+					backgroundColor: "#222"
+				},
+				point: {
+					xSpacing: 75,
+					ySpacing: 151,
+					speed: 1,
+					
+					minRadius: 2,
+					addedRadius: 1
+				}
+			},
+			Colors = [
+				"rgba(241, 196, 15,1.0)", //yellow
+				"rgba(231, 76, 60,1.0)", //red
+				"rgba(52, 152, 219,1.0)", //blue
+				"rgba(46, 204, 113,1.0)", //green
+			],
+			World = function(){
+				this.bodies = {};
+				this.addBody = function(body){
+					var bodyType = body.name;
+					this.bodies[bodyType] ? true : this.bodies[bodyType] = [];
+					this.bodies[bodyType].push(body);
+				};
+				this.update = function(){
+					for(key in this.bodies){
+						this.bodies[key].map( function(Entity){
+							Entity.update();
+						})
+					}
+				};
+				this.render = function(){
+					for(key in this.bodies){
+						this.bodies[key].map( function(Entity){
+							Entity.render();
+						})
+					}
+				};
+				this.initBody = function(bodyType){
+					for(var i = 0; i < this.bodies[bodyType].length; i++){
+						this.bodies[bodyType][i].init();
+					}
+				};
+				this.connect = function(){
+					for(key in this.bodies){
+						for(var i = 0; i < this.bodies[key].length; i++){
+							for(var j = 0; j < this.bodies[key].length; j++){
+								var distance = checkDistance(this.bodies[key][i].x, this.bodies[key][i].y, this.bodies[key][j].x, this.bodies[key][j].y),
+										opacity = 1 - distance/opts.point.xSpacing/2.1;
+								if(opacity > 0){
+									var gradient = canvas.createLinearGradient(
+										this.bodies[key][i].x,
+										this.bodies[key][i].y,
+										this.bodies[key][j].x,
+										this.bodies[key][j].y
+									);
+									gradient.addColorStop(0, this.bodies[key][i].color.replace("1.0", opacity));
+									gradient.addColorStop(1, this.bodies[key][j].color.replace("1.0", opacity));
+									canvas.beginPath();
+									canvas.moveTo(this.bodies[key][i].x, this.bodies[key][i].y);
+									canvas.lineTo(this.bodies[key][j].x, this.bodies[key][j].y);
+									canvas.strokeStyle = gradient;
+									canvas.stroke();
+								}
+							}
+						}
+					}
+				}
+			},
+			checkDistance = function(x1, y1, x2, y2){
+				return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+			},
+			Point = function(obj){
+				this.name = "point";
+				this.x = obj.x;
+				this.y = obj.y;
+				this.speed = obj.speed;
+				this.direction = obj.direction;
+				this.radius = opts.point.minRadius + Math.random()*opts.point.addedRadius;
+				this.dy = obj.dy || null;
+				this.color = Colors[Math.floor(Math.random()*Colors.length)];
+				this.init = function(){
+					this.dy ? true : this.dy = Math.radians(this.direction ? 90 : -90)*(opts.point.speed);
+				};
+				this.update = function(){
+					this.border();
+					this.y += this.dy;
+				};
+				this.border = function(){
+					this.y < 0 + this.radius || this.y > h - this.radius ? this.dy *= -1 : true;
+				}
+				this.render = function(){
+					canvas.beginPath();
+					canvas.arc(this.x, this.y, this.radius, 0, pi2);
+					canvas.closePath();
+					canvas.fillStyle = this.color;
+					canvas.shadowColor = this.color;
+					canvas.shadowBlur = 20;
+					canvas.fill();
+					
+					canvas.shadowBlur = 0;
+				};
+			};
+	
+	Math.radians = function(deg){
+		return deg * (Math.PI / 180);
+	}
+	this.worldInit = function(){
+		world = new World();
+		for(var i = 0, a = 0; i < w; a++, i += opts.point.xSpacing){
+			for(var j = 0; j < h; j += opts.point.ySpacing){
+				world.addBody( new Point({
+					x: i,
+					y: j + (a%2 == 0 ? opts.point.minRadius + opts.point.addedRadius + .000001 : 20),
+					speed: opts.point.speed,
+					direction: a%2 == 0 ? true : false
+				}) );
+			}
+		}
+		world.initBody("point");
+	};
+	this.addPoint = function(){
+		world.addBody( new Point({
+			x: Math.random()*w,
+			y: Math.random()*h,
+			dy: (Math.random() < 0.5? 1 : -1)*opts.point.speed
+		}));
+	}
+	function setup(){
+		worldInit()
+		
+		var gui = new dat.GUI();
+		gui.close();
+		gui.add(opts.point, "speed", 0.5, 10);
+		gui.add(this, "worldInit").name("reInit");
+		gui.add(this, "addPoint").name("addPoint")
+		
+		window.requestAnimationFrame(loop);
+	};
+	function loop(){
+		canvas.fillStyle = opts.canvas.backgroundColor;
+		canvas.fillRect(0,0,w,h);
+		
+		world.update();
+		world.connect();
+		world.render();
+		window.requestAnimationFrame(loop);
+	};
+	setup();
+	
+	window.addEventListener("resize", function(){
+		w = canvasBody.width = window.innerWidth;
+		h = canvasBody.height = window.innerHeight;
+	});
+	canvasBody.addEventListener("mousedown", function(e){
+		world.addBody( new Point({
+			x: e.pageX,
+			y: e.pageY,
+			dy: (Math.random() < 0.5? 1 : -1)*opts.point.speed
+		}))
+	})
+})();
+</script>
+</html>
