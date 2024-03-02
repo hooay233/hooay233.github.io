@@ -7,11 +7,15 @@
 	<link rel="stylesheet" href="./style/linostyle.css">
 </head>
 <body>
+	<noscript><h1>你的浏览器禁用了脚本，有些功能可能不能运行</h1></noscript>
 	<h1>这是晖哥的页面，但是他没想好这里要放什么</h1>
 	<h1>This is Hooay Chen's page, but he don't know what things shoud he put here.</h1>
 	<h2>以内容下仅用于测试网页样式 TEST:</h2>
 	<main>
-		<p>测试文本</p>
+		<p>晖哥是一个非常帅的人<br>
+		性别是<strong title="自认同性别武装直升机">男性</strong><br>
+		现在 <span id="age">14</span> 岁了
+		</p>
 		<a href="#">测试链接</a>
 		<input type="text" placeholder="输入框">
 		<button>按钮</button>
@@ -20,7 +24,27 @@
 		<input type="button" value="闰土与猹" onclick="document.body.className='leave';
 			setTimeout(()=>{window.location.href='./rtyc/';
 			setTimeout(()=>{document.body.className=''}, 2000)}, 750)
-		">
+			">
 	</main>
 </body>
+<script>
+	// 出生日期
+	var birthDate = new Date('2010-02-11');
+	const agespan = document.getElementById('age')
+	function updateAge() {
+		var now = new Date();
+		var ageMs = now - birthDate;
+		var ageSec = ageMs / 1000; // 将毫秒转换为秒
+		var age = ageSec / (60 * 60 * 24 * 365); // 将秒转换为年
+
+		// 将年龄格式化为精确到小数点后12位的字符串
+		var ageFormatted = age.toFixed(12);
+
+		// 更新页面上的元素
+		agespan.textContent = ageFormatted;
+	}
+
+	// 每秒更新年龄显示
+	setInterval(updateAge, 50);
+</script>
 </html>
