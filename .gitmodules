@@ -1,6 +1,3 @@
 [submodule "rtyc"]
 	path = rtyc
 	url = https://github.com/hooay233/RunTuYuCha-Build.git
-[submodole "hpc"]
-	path = hpc
-	url = https://github.com/hooay233/HoverPoemCreator.git
