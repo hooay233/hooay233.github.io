@@ -1,44 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-cn">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>晖哥的页面 Hooay Chen's page</title>
-	<link rel="stylesheet" href="./style/linostyle.css">
+	<link rel="stylesheet" href="style/style.css">
+<!--	<script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.5.0.min.js"></script>-->
 </head>
 <body>
 	<noscript><h1>你的浏览器禁用了脚本，有些功能可能不能运行</h1></noscript>
-	<h1>这是晖哥的页面，但是他没想好这里要放什么</h1>
-	<h1>This is Hooay Chen's page, but he don't know what things shoud he put here.</h1>
+	<h1 class="auto">欢迎来到晖哥的个人页面</h1>
 	<h2>以内容下仅用于测试网页样式 TEST:</h2>
 	<main>
 		<p>晖哥是一个非常帅的人<br>
 		性别是<strong title="自认同性别武装直升机">男性</strong><br>
 		现在 <span id="age">14</span> 岁了
 		</p>
-		<a href="#">测试链接</a>
-		<input type="text" placeholder="输入框">
-		<button>按钮</button>
-		<input type="button" value="输入按钮">
-		<input type="checkbox" name="n" id="i" checked>
-		<input type="button" value="闰土与猹" onclick="document.body.className='leave';
-			setTimeout(()=>{window.location.href='./rtyc/';
-			setTimeout(()=>{document.body.className=''}, 2000)}, 750)
-			">
+		<p>项目：</p><br>
+		<input type="button" value="闰土与猹" onclick="jump('./rtyc', 'black')">
+		<input type="button" value="悬浮诗生成器" onclick="jump('./hpc')">
 	</main>
 </body>
 <script>
 	// 出生日期
-	var birthDate = new Date('2010-02-11');
+	const birthDate = new Date('2010-02-11');
 	const agespan = document.getElementById('age')
 	function updateAge() {
-		var now = new Date();
-		var ageMs = now - birthDate;
-		var ageSec = ageMs / 1000; // 将毫秒转换为秒
-		var age = ageSec / (60 * 60 * 24 * 365); // 将秒转换为年
+		let now = new Date();
+		let ageMs = now - birthDate;
+		let ageSec = ageMs / 1000; // 将毫秒转换为秒
+		let age = ageSec / (60 * 60 * 24 * 365); // 将秒转换为年
 
 		// 将年龄格式化为精确到小数点后12位的字符串
-		var ageFormatted = age.toFixed(12);
+		let ageFormatted = age.toFixed(12);
 
 		// 更新页面上的元素
 		agespan.textContent = ageFormatted;
@@ -46,5 +40,22 @@
 
 	// 更新年龄显示
 	setInterval(updateAge, 50);
+
+	function whenVisibilityChange(){
+		if (document.visibilityState === 'hidden') {
+			document.title = '再见';
+		} else {
+			document.title = '欢迎回来';
+			document.body.className = "";
+			setTimeout(()=>{document.title = "晖哥的页面 Hooay Chen's page"}, 1000);
+			// setTimeout(()=>{document.removeEventListener('visibilitychange', whenVisibilityChange);}, 1500);
+		}
+	}
+	document.addEventListener('visibilitychange', whenVisibilityChange);
+	function jump(url, color){
+		color = color || "white";
+		document.body.className = "leave-to-"+color;
+		setTimeout(()=>{window.open(url)}, 700);
+	}
 </script>
 </html>
