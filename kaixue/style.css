@@ -1,0 +1,33 @@
+*{
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+h1{
+    font-size: min(10vw,2cm);
+    background-color: deepskyblue;
+}
+h2{
+    font-size: min(5vw,1.5cm);
+}
+label{
+    font-size: 4vw;
+}
+input{
+    font-size: 4vw;
+    margin-top: 5mm;
+    margin-bottom: 2mm;
+}
+a{
+    font-size: 4vw;
+    display: block;
+    color: #123;
+    margin: 2mm;
+    text-decoration: none;
+    background-color: #def;
+    padding: 1mm;
+    border-radius: 114514px;
+}
+a:hover{
+    background-color: #ace;
+}
