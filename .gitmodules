@@ -4,3 +4,6 @@
 [submodule "hpc"]
 	path = hpc
 	url = https://github.com/hooay233/HoverPoemCreator
+[submodule "wctspp"]
+	path = wctspp
+	url = https://github.com/hooay233/web-canvas-that-support-pen-pressure
