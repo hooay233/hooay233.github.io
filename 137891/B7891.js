@@ -21,7 +21,7 @@ function B7891ize(nNormal){
     let dec = ""
     if ( Number(nNormal) % 1 != 0) {
         let decl = nNormal.split(".").slice(-1)[0].length;
-        dec = `×${B7891a[10]}^((${B7891neg})×(${B7891ize(decl)}))`;
+        dec = `×(${B7891a[10]})^((${B7891neg})×(${B7891ize(decl)}))`;
         nNormal = nNormal.replace(".","");
     }
     if ( nNormal == B7891o ){
