@@ -12,7 +12,7 @@ const B7891a = [
     "1³-7+8+9-1"  //10
 ];
 const B7891neg = "1³⁷+8-9-1";
-const B7891o = 134891;
+const B7891o = 137891;
 
 function B7891ize(nNormal){
     if ( isNaN(nNormal)){
