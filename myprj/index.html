@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>我的项目 - Hooay Chen</title>
+	<link rel="stylesheet" href="../style.css">
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		body {
+			background-color: #f0f0f0;
+			color: #333;
+			padding: 20px;
+		}
+		a {
+			color: #ee3388;
+			text-decoration: none;
+		}
+		a:hover {
+			text-decoration: underline;
+		}
+		.page-wrap {
+			min-height: 100vh;
+			padding: 20px;
+		}
+		.headbar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			background-color: #eee;
+			color: #222;
+			padding: 10px 20px;
+			border-radius: 10px;
+			margin-bottom: 20px;
+		}
+		.headbar a {
+			margin-left: 10px;
+			color: #ee3388;
+			text-decoration: none;
+		}
+		.headbar a:hover {
+			text-decoration: underline;
+		}
+		.title {
+			background-color: #fff;
+			border-radius: 10px;
+			padding: 20px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			margin-bottom: 20px;
+		}
+		.projects-container {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			gap: 20px;
+			margin-top: 20px;
+		}
+		.project-card {
+			background-color: #fff;
+			border-radius: 10px;
+			padding: 20px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			transition: transform 0.3s ease, box-shadow 0.3s ease;
+		}
+		.project-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+		}
+		.project-title {
+			font-size: 18px;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 10px;
+		}
+		.project-desc {
+			font-size: 14px;
+			color: #666;
+			margin-bottom: 15px;
+			line-height: 1.5;
+		}
+		.project-language {
+			display: inline-block;
+			background-color: #ee3388;
+			color: #fff;
+			padding: 5px 10px;
+			border-radius: 5px;
+			font-size: 12px;
+			margin-bottom: 10px;
+		}
+		.project-links {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+		.project-links a, .project-links button {
+			padding: 8px 15px;
+			border-radius: 5px;
+			font-size: 12px;
+			text-decoration: none;
+			cursor: pointer;
+			border: none;
+			transition: background-color 0.3s ease;
+		}
+		.github-link {
+			background-color: #333;
+			color: #fff;
+		}
+		.github-link:hover {
+			background-color: #555;
+		}
+		.preview-link {
+			background-color: #3388ee;
+			color: #fff;
+		}
+		.preview-link:hover {
+			background-color: #2277cc;
+		}
+		.filter-section {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 20px;
+			flex-wrap: wrap;
+		}
+		.filter-btn {
+			padding: 8px 15px;
+			border-radius: 5px;
+			border: 2px solid #ee3388;
+			background-color: transparent;
+			color: #ee3388;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+		.filter-btn.active {
+			background-color: #ee3388;
+			color: #fff;
+		}
+		.filter-btn:hover {
+			transform: scale(1.05);
+		}
+		.theme-transition-overlay {
+			position: fixed;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9999;
+			pointer-events: none;
+			overflow: hidden;
+		}
+		.theme-transition-overlay .panel {
+			position: fixed;
+			inset: 0;
+			z-index: 9999;
+			overflow: hidden;
+			pointer-events: none;
+			transition: clip-path 0.75s ease;
+			clip-path: inset(0 calc(100% - 4px) 0 0);
+		}
+		.theme-transition-overlay .panel.active {
+			clip-path: inset(0 0 0 0);
+		}
+		.theme-transition-overlay .page-clone {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			pointer-events: none;
+			box-sizing: border-box;
+		}
+		.theme-transition-overlay .scanline {
+			position: absolute;
+			top: 0;
+			right: 0;
+			width: 4px;
+			height: 100%;
+			background: rgba(255,255,255,0.95);
+			box-shadow: 0 0 12px rgba(255,255,255,0.5);
+			pointer-events: none;
+		}
+		body.dark-mode {
+			background-color: #333;
+			color: #eee;
+		}
+		body.dark-mode .headbar {
+			background-color: #555;
+			color: #eee;
+		}
+		body.dark-mode .title,
+		body.dark-mode .project-card {
+			background-color: #444;
+			color: #eee;
+		}
+		body.dark-mode .project-desc,
+		body.dark-mode .project-title {
+			color: #eee;
+		}
+		body.dark-mode .project-desc {
+			color: #aaa;
+		}
+	</style>
+</head>
+<body>
+	<div class="page-wrap">
+		<div class="headbar">
+			<div>我的项目</div>
+			<div>
+				<a href="../index.html">← 返回首页</a>
+				<button id="dark-mode-switch" onclick="startThemeTransition()" style="background-color: #ccc; color: #222; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;"></button>
+			</div>
+		</div>
+		<div class="title">
+			<h1>我的GitHub项目</h1>
+			<p style="margin-top: 10px; color: #666;">展示我在GitHub上的各个项目</p>
+		</div>
+		<div class="filter-section" id="filterSection">
+			<button class="filter-btn active" onclick="filterProjects('all')">全部</button>
+		</div>
+		<div class="projects-container" id="projectsContainer">
+			<!-- 项目将由JavaScript动态生成 -->
+		</div>
+	</div>
+
+	<script>
+		const pageWrap = document.querySelector('.page-wrap');
+		const darkModeSwitch = document.getElementById('dark-mode-switch');
+
+		// 项目数据
+		const projects = [];
+
+		// 主题相关函数
+		function setThemeStyles(isDark) {
+			document.body.classList.toggle('dark-mode', isDark);
+			document.body.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
+			document.body.style.color = isDark ? '#eee' : '#333';
+			document.querySelector('.headbar').style.backgroundColor = isDark ? '#555' : '#eee';
+			document.querySelector('.headbar').style.color = isDark ? '#eee' : '#222';
+			document.querySelector('.title').style.backgroundColor = isDark ? '#444' : '#fff';
+			document.querySelector('.title').style.color = isDark ? '#eee' : '#333';
+		}
+
+		function updateSwitchText(isDark) {
+			darkModeSwitch.textContent = isDark ? '切换到亮色模式' : '切换到暗色模式';
+		}
+
+		function setThemeStylesOnNode(root, isDark) {
+			if (root instanceof HTMLElement) {
+				root.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
+				root.style.color = isDark ? '#eee' : '#333';
+			}
+			const headbar = root.querySelector('.headbar');
+			if (headbar) {
+				headbar.style.backgroundColor = isDark ? '#555' : '#eee';
+				headbar.style.color = isDark ? '#eee' : '#222';
+			}
+			const title = root.querySelector('.title');
+			if (title) {
+				title.style.backgroundColor = isDark ? '#444' : '#fff';
+				title.style.color = isDark ? '#eee' : '#333';
+			}
+		}
+
+		function createTransitionOverlay(newIsDark) {
+			const overlay = document.createElement('div');
+			overlay.className = 'theme-transition-overlay';
+
+			const newPanel = document.createElement('div');
+			newPanel.className = 'panel';
+			newPanel.style.backgroundColor = newIsDark ? '#333' : '#f0f0f0';
+
+			const scrollX = window.scrollX || window.pageXOffset;
+			const scrollY = window.scrollY || window.pageYOffset;
+
+			const cloneWrapper = document.createElement('div');
+			cloneWrapper.className = 'page-clone';
+			cloneWrapper.style.position = 'absolute';
+			cloneWrapper.style.top = `${-scrollY}px`;
+			cloneWrapper.style.left = `${-scrollX}px`;
+			cloneWrapper.style.padding = getComputedStyle(document.body).padding;
+			cloneWrapper.style.width = '100%';
+			cloneWrapper.style.height = '100%';
+			cloneWrapper.style.boxSizing = 'border-box';
+
+			const clone = pageWrap.cloneNode(true);
+			setThemeStylesOnNode(clone, newIsDark);
+			cloneWrapper.appendChild(clone);
+			newPanel.appendChild(cloneWrapper);
+
+			const scanline = document.createElement('div');
+			scanline.className = 'scanline';
+			newPanel.appendChild(scanline);
+
+			overlay.appendChild(newPanel);
+
+			return { overlay, newPanel };
+		}
+
+		function startThemeTransition() {
+			const isDark = document.body.classList.contains('dark-mode');
+			const newIsDark = !isDark;
+			
+			darkModeSwitch.classList.add('spcbtn_disabled');
+			darkModeSwitch.onclick = null;
+			
+			const { overlay, newPanel } = createTransitionOverlay(newIsDark);
+			document.body.appendChild(overlay);
+
+			requestAnimationFrame(() => {
+				newPanel.classList.add('active');
+			});
+
+			newPanel.addEventListener('transitionend', () => {
+				setThemeStyles(newIsDark);
+				updateSwitchText(newIsDark);
+				overlay.remove();
+				
+				darkModeSwitch.classList.remove('spcbtn_disabled');
+				darkModeSwitch.onclick = startThemeTransition;
+			}, { once: true });
+		}
+
+		// 从GitHub API获取项目
+		async function loadProjects() {
+			try {
+				const response = await fetch('https://api.github.com/users/hooay233/repos');
+				const repos = await response.json();
+				
+				// 过滤和处理项目
+				const filteredRepos = repos.filter(repo => !repo.fork || repo.name.includes('Hooay'));
+				
+				// 按星数和更新时间排序
+				filteredRepos.sort((a, b) => {
+					if (b.stargazers_count !== a.stargazers_count) {
+						return b.stargazers_count - a.stargazers_count;
+					}
+					return new Date(b.updated_at) - new Date(a.updated_at);
+				});
+
+				window.allProjects = filteredRepos;
+				renderProjects(filteredRepos);
+				updateFilterButtons();
+			} catch (error) {
+				console.error('获取项目数据失败:', error);
+				document.getElementById('projectsContainer').innerHTML = '<p>无法加载项目数据</p>';
+			}
+		}
+
+		function renderProjects(repos) {
+			const container = document.getElementById('projectsContainer');
+			container.innerHTML = repos.map(repo => {
+				const language = repo.language || '未指定';
+				const htmlProjects = ['HoverPoemCreator', 'RunTuYuCha-Build', 'Hooay-Bonjourr', 'Web-canvas-that-support-pen-pressure'];
+				const hasPreview = htmlProjects.includes(repo.name);
+				const forkLabel = repo.fork ? ` <span style="color: #aaa; font-size: 12px; margin-left: 5px;">(Fork)</span>` : '';
+				
+				return `
+					<div class="project-card">
+						<div class="project-title">${repo.name}${forkLabel}</div>
+						<div class="project-desc">${repo.description || '暂无描述'}</div>
+						<div class="project-language">${language}</div>
+						<div class="project-links">
+							<a href="${repo.html_url}" target="_blank" class="github-link">GitHub</a>
+							${hasPreview ? `<a href="./${repo.name}/index.html" class="preview-link">预览</a>` : ''}
+						</div>
+					</div>
+				`;
+			}).join('');
+		}
+
+		function updateFilterButtons() {
+			const languages = new Set(window.allProjects.map(r => r.language || '未指定'));
+			const filterSection = document.getElementById('filterSection');
+			filterSection.innerHTML = '<button class="filter-btn active" onclick="filterProjects(\'all\')">全部</button>';
+			
+			languages.forEach(lang => {
+				const btn = document.createElement('button');
+				btn.className = 'filter-btn';
+				btn.textContent = lang;
+				btn.onclick = () => filterProjects(lang);
+				filterSection.appendChild(btn);
+			});
+		}
+
+		function filterProjects(language) {
+			// 更新按钮状态
+			document.querySelectorAll('.filter-btn').forEach(btn => {
+				btn.classList.remove('active');
+			});
+			event.target.classList.add('active');
+
+			// 过滤项目
+			if (language === 'all') {
+				renderProjects(window.allProjects);
+			} else {
+				const filtered = window.allProjects.filter(r => (r.language || '未指定') === language);
+				renderProjects(filtered);
+			}
+		}
+
+		// 初始化
+		setThemeStyles(false);
+		updateSwitchText(false);
+		loadProjects();
+	</script>
+</body>
+</html>

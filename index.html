@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Hooooooooooooooooooooooooooooooooooooay's Here</title>
+	<link rel="stylesheet" href="style.css">
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		a {
+			color: #ee3388;
+			text-decoration: none;
+		}
+		a:hover {
+			text-decoration: underline;
+			transform: scale(1.2);
+			transition: transform 0.3s ease;
+		}
+		.theme-transition-overlay {
+			position: fixed;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9999;
+			pointer-events: none;
+			overflow: hidden;
+		}
+		.theme-transition-overlay .panel {
+			position: fixed;
+			inset: 0;
+			z-index: 9999;
+			overflow: hidden;
+			pointer-events: none;
+			transition: clip-path 0.75s ease;
+			clip-path: inset(0 calc(100% - 4px) 0 0);
+		}
+		.theme-transition-overlay .panel.active {
+			clip-path: inset(0 0 0 0);
+		}
+		.theme-transition-overlay .page-clone {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			pointer-events: none;
+			box-sizing: border-box;
+		}
+		.theme-transition-overlay .scanline {
+			position: absolute;
+			top: 0;
+			right: 0;
+			width: 4px;
+			height: 100%;
+			background: rgba(255,255,255,0.95);
+			box-shadow: 0 0 12px rgba(255,255,255,0.5);
+			pointer-events: none;
+		}
+		.page-wrap {
+			min-height: 100vh;
+			padding: 20px;
+		}
+		body {
+			background-color: #f0f0f0;
+			color: #333;
+			padding: 20px;
+		}
+		.title {
+			background-color: #fff;
+			border-radius: 10px;
+			padding: 20px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+		}
+		.bigger {
+			font-size: 24px;
+			font-weight: bold;
+		}
+		.small {
+			font-size: 14px;
+			color: #888;
+		}
+		.item {
+			display: block;
+			margin-top: 10px;
+			font-size: 16px;
+		}
+		.headbar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			background-color: #eee;
+			color: #222;
+			padding: 10px 20px;
+			border-radius: 10px;
+			margin-bottom: 20px;
+		}
+		.leftonhb {
+			font-size: 18px;
+			font-weight: bold;
+		}
+		.rightonhb button {
+			background-color: #ccc;
+			color: #222;
+			border: none;
+			padding: 10px 20px;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.rightonhb button:hover {
+			background-color: #777;
+			transition: background-color 0.3s;
+		}
+		.mainbody {
+			margin-top: 20px;
+			padding: 20px;
+			background-color: #fff;
+			border-radius: 10px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			text-align: center;
+		}
+		.mainbody .item {
+			display: inline-block;
+			margin-right: 20px;
+		}
+		button {
+			font-size: 16px;
+			border: none;
+			padding: 10px 20px;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.pinkbtn {
+			background-color: #ee3388;
+			color: #fff;
+		}
+		.pinkbtn:hover {
+			background-color: #cc2277;
+			transform: scale(1.2);
+			transition: background-color 0.3s ease, transform 0.3s ease;
+		}
+		.bluebtn {
+			background-color: #3388ee;
+			color: #fff;
+		}
+		.bluebtn:hover {
+			background-color: #2277cc;
+			transform: scale(1.2);
+			transition: background-color 0.3s ease, transform 0.3s ease;
+		}
+		.graybtn {
+			background-color: #ccc;
+			color: #222;
+		}
+		.graybtn:hover {
+			background-color: #999;
+			transition: background-color 0.3s ease;
+		}
+		.graybtn {
+			background-color: #ccc;
+			color: #222;
+		}
+		.graybtn:hover {
+			background-color: #999;
+			transition: background-color 0.3s ease;
+		}
+		.pinkbtn.button-link, .bluebtn.button-link {
+			display: inline-block;
+			padding: 10px 20px;
+			border-radius: 5px;
+			text-decoration: none !important;
+			cursor: pointer;
+			font-size: 16px;
+			border: none;
+			transition: background-color 0.3s ease, transform 0.3s ease;
+		}
+		.pinkbtn.button-link {
+			background-color: #ee3388;
+			color: #fff !important;
+		}
+		.pinkbtn.button-link:hover {
+			background-color: #cc2277;
+			transform: scale(1.2);
+			text-decoration: none;
+		}
+		.bluebtn.button-link {
+			background-color: #3388ee;
+			color: #fff !important;
+		}
+		.bluebtn.button-link:hover {
+			background-color: #2277cc;
+			transform: scale(1.2);
+			text-decoration: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="page-wrap">
+		<div class="headbar"><div class="leftonhb">Hooooooooooooooooooooooooooooooooooooay</div><div class="rightonhb"><button id="dark-mode-switch" onclick="startThemeTransition()"></button></div></div>
+		<div class="title">
+			<span class="bigger">Hooay Chen</span> <span class="small gray">(@hooay233)</span><br>
+			<span class="item">性别: 男</span>
+			<span class="item">生日：2 月 11 日</span>
+			<span class="item">主要使用OS：Debian GNU/Linux</span>
+			<span class="item">会的（实则不然）编程语言：Python, JavaScript</span>
+			<span class="item">常玩游戏：<ruby>蔚蓝档案<rt>BlueArchive</rt></ruby> osu!</span>
+			github: <a href="https://github.com/hooay233" target="_blank">@hooay233</a>
+		</div>
+		<div class="mainbody">
+			<span class="item"><a href="myprj/index.html" class="pinkbtn button-link">我的项目</a></span>
+			<span class="item"><a href="vibecodes/index.html" class="bluebtn button-link"><ruby>码氛<rt>Vibe Codes</rt></ruby></a></span>
+			<span class="item"><button id="contact" class="graybtn spcbtn_disabled">测试按钮</button></span>
+		</div>
+	</div>
+	<script>
+		const darkModeSwitch = document.getElementById('dark-mode-switch');
+		const pageWrap = document.querySelector('.page-wrap');
+
+		function setThemeStyles(isDark) {
+			document.body.classList.toggle('dark-mode', isDark);
+			document.body.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
+			document.body.style.color = isDark ? '#eee' : '#333';
+			document.querySelector('.headbar').style.backgroundColor = isDark ? '#555' : '#eee';
+			document.querySelector('.headbar').style.color = isDark ? '#eee' : '#222';
+			document.querySelector('.title').style.backgroundColor = isDark ? '#444' : '#fff';
+			document.querySelector('.title').style.color = isDark ? '#eee' : '#333';
+			document.querySelector('.mainbody').style.backgroundColor = isDark ? '#444' : '#fff';
+			document.querySelector('.mainbody').style.color = isDark ? '#eee' : '#333';
+			document.querySelectorAll('.pinkbtn').forEach(btn => {
+				btn.style.backgroundColor = isDark ? '#cc2277' : '#ee3388';
+			});
+			document.querySelectorAll('.bluebtn').forEach(btn => {
+				btn.style.backgroundColor = isDark ? '#2277cc' : '#3388ee';
+			});
+			document.querySelectorAll('.item').forEach(item => {
+				item.style.color = isDark ? '#eee' : '#333';
+			});
+			document.querySelectorAll('a').forEach(link => {
+				link.style.color = '#ee3388';
+			});
+			document.querySelectorAll('.small').forEach(small => {
+				small.style.color = isDark ? '#aaa' : '#888';
+			});
+			document.querySelectorAll('.headbar .leftonhb').forEach(left => {
+				left.style.color = isDark ? '#eee' : '#222';
+			});
+		}
+
+		function updateSwitchText(isDark) {
+			darkModeSwitch.textContent = isDark ? '切换到亮色模式' : '切换到暗色模式';
+		}
+
+		function setThemeStylesOnNode(root, isDark) {
+			if (root instanceof HTMLElement) {
+				root.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
+				root.style.color = isDark ? '#eee' : '#333';
+			}
+			const headbar = root.querySelector('.headbar');
+			if (headbar) {
+				headbar.style.backgroundColor = isDark ? '#555' : '#eee';
+				headbar.style.color = isDark ? '#eee' : '#222';
+			}
+			const title = root.querySelector('.title');
+			if (title) {
+				title.style.backgroundColor = isDark ? '#444' : '#fff';
+				title.style.color = isDark ? '#eee' : '#333';
+			}
+			const mainbody = root.querySelector('.mainbody');
+			if (mainbody) {
+				mainbody.style.backgroundColor = isDark ? '#444' : '#fff';
+				mainbody.style.color = isDark ? '#eee' : '#333';
+			}
+			root.querySelectorAll('.pinkbtn').forEach(btn => {
+				btn.style.backgroundColor = isDark ? '#cc2277' : '#ee3388';
+			});
+			root.querySelectorAll('.bluebtn').forEach(btn => {
+				btn.style.backgroundColor = isDark ? '#2277cc' : '#3388ee';
+			});
+			root.querySelectorAll('.item').forEach(item => {
+				item.style.color = isDark ? '#eee' : '#333';
+			});
+			root.querySelectorAll('.small').forEach(small => {
+				small.style.color = isDark ? '#aaa' : '#888';
+			});
+			root.querySelectorAll('.headbar .leftonhb').forEach(left => {
+				left.style.color = isDark ? '#eee' : '#222';
+			});
+		}
+
+		function createTransitionOverlay(newIsDark) {
+			const overlay = document.createElement('div');
+			overlay.className = 'theme-transition-overlay';
+
+		const newPanel = document.createElement('div');
+		newPanel.className = 'panel';
+		newPanel.style.backgroundColor = newIsDark ? '#333' : '#f0f0f0';
+
+		const scrollX = window.scrollX || window.pageXOffset;
+		const scrollY = window.scrollY || window.pageYOffset;
+
+		const cloneWrapper = document.createElement('div');
+		cloneWrapper.className = 'page-clone';
+		cloneWrapper.style.position = 'absolute';
+		cloneWrapper.style.top = `${-scrollY}px`;
+		cloneWrapper.style.left = `${-scrollX}px`;
+		cloneWrapper.style.padding = getComputedStyle(document.body).padding;
+		cloneWrapper.style.width = '100%';
+		cloneWrapper.style.height = '100%';
+		cloneWrapper.style.boxSizing = 'border-box';
+
+		const clone = pageWrap.cloneNode(true);
+		setThemeStylesOnNode(clone, newIsDark);
+		cloneWrapper.appendChild(clone);
+		newPanel.appendChild(cloneWrapper);
+
+		const scanline = document.createElement('div');
+		scanline.className = 'scanline';
+		newPanel.appendChild(scanline);
+
+		overlay.appendChild(newPanel);
+
+		return { overlay, newPanel };
+	}
+
+	function startThemeTransition() {
+		const isDark = document.body.classList.contains('dark-mode');
+		const newIsDark = !isDark;
+		
+		// 禁用按钮
+		darkModeSwitch.classList.add('spcbtn_disabled');
+		darkModeSwitch.onclick = null;
+		
+		const { overlay, newPanel } = createTransitionOverlay(newIsDark);
+		document.body.appendChild(overlay);
+
+		requestAnimationFrame(() => {
+			newPanel.classList.add('active');
+		});
+
+		newPanel.addEventListener('transitionend', () => {
+			setThemeStyles(newIsDark);
+			updateSwitchText(newIsDark);
+			overlay.remove();
+			
+			// 恢复按钮
+			darkModeSwitch.classList.remove('spcbtn_disabled');
+			darkModeSwitch.onclick = startThemeTransition;
+		}, { once: true });
+	}
+
+	setThemeStyles(false);
+	updateSwitchText(false);
+	document.querySelectorAll('.spcbtn_disabled').forEach(button => {
+		button.addEventListener('click', event => {
+			event.preventDefault();
+			button.classList.remove('shake');
+			void button.offsetWidth;
+			button.classList.add('shake');
+		});
+	});
+	</script>
+</body>
+</html>
