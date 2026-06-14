@@ -195,6 +195,39 @@
 			transform: scale(1.2);
 			text-decoration: none;
 		}
+
+		/* === 暗色模式样式 === */
+		body.dark_style {
+			background-color: #333 !important;
+			color: #eee !important;
+		}
+		.headbar.dark_style {
+			background-color: #555 !important;
+			color: #eee !important;
+		}
+		.title.dark_style {
+			background-color: #444 !important;
+			color: #eee !important;
+		}
+		.mainbody.dark_style {
+			background-color: #444 !important;
+			color: #eee !important;
+		}
+		.pinkbtn.dark_style {
+			background-color: #cc2277 !important;
+		}
+		.bluebtn.dark_style {
+			background-color: #2277cc !important;
+		}
+		.item.dark_style {
+			color: #eee !important;
+		}
+		.small.dark_style {
+			color: #aaa !important;
+		}
+		.headbar .leftonhb.dark_style {
+			color: #eee !important;
+		}
 	</style>
 </head>
 <body>
@@ -215,38 +248,25 @@
 			<span class="item"><button id="contact" class="graybtn spcbtn_disabled">测试按钮</button></span>
 		</div>
 	</div>
+	</body>
 	<script>
+		const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 		const darkModeSwitch = document.getElementById('dark-mode-switch');
 		const pageWrap = document.querySelector('.page-wrap');
 
+		function walkToggle(root, isDark) {
+			const all = root.querySelectorAll('*');
+			for (let i = 0; i < all.length; i++) {
+				all[i].classList.toggle('dark_style', isDark);
+			}
+			if (root.classList) {
+				root.classList.toggle('dark_style', isDark);
+			}
+		}
+
 		function setThemeStyles(isDark) {
 			document.body.classList.toggle('dark-mode', isDark);
-			document.body.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-			document.body.style.color = isDark ? '#eee' : '#333';
-			document.querySelector('.headbar').style.backgroundColor = isDark ? '#555' : '#eee';
-			document.querySelector('.headbar').style.color = isDark ? '#eee' : '#222';
-			document.querySelector('.title').style.backgroundColor = isDark ? '#444' : '#fff';
-			document.querySelector('.title').style.color = isDark ? '#eee' : '#333';
-			document.querySelector('.mainbody').style.backgroundColor = isDark ? '#444' : '#fff';
-			document.querySelector('.mainbody').style.color = isDark ? '#eee' : '#333';
-			document.querySelectorAll('.pinkbtn').forEach(btn => {
-				btn.style.backgroundColor = isDark ? '#cc2277' : '#ee3388';
-			});
-			document.querySelectorAll('.bluebtn').forEach(btn => {
-				btn.style.backgroundColor = isDark ? '#2277cc' : '#3388ee';
-			});
-			document.querySelectorAll('.item').forEach(item => {
-				item.style.color = isDark ? '#eee' : '#333';
-			});
-			document.querySelectorAll('a').forEach(link => {
-				link.style.color = '#ee3388';
-			});
-			document.querySelectorAll('.small').forEach(small => {
-				small.style.color = isDark ? '#aaa' : '#888';
-			});
-			document.querySelectorAll('.headbar .leftonhb').forEach(left => {
-				left.style.color = isDark ? '#eee' : '#222';
-			});
+			walkToggle(document.body, isDark);
 		}
 
 		function updateSwitchText(isDark) {
@@ -254,113 +274,101 @@
 		}
 
 		function setThemeStylesOnNode(root, isDark) {
-			if (root instanceof HTMLElement) {
-				root.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-				root.style.color = isDark ? '#eee' : '#333';
-			}
-			const headbar = root.querySelector('.headbar');
-			if (headbar) {
-				headbar.style.backgroundColor = isDark ? '#555' : '#eee';
-				headbar.style.color = isDark ? '#eee' : '#222';
-			}
-			const title = root.querySelector('.title');
-			if (title) {
-				title.style.backgroundColor = isDark ? '#444' : '#fff';
-				title.style.color = isDark ? '#eee' : '#333';
-			}
-			const mainbody = root.querySelector('.mainbody');
-			if (mainbody) {
-				mainbody.style.backgroundColor = isDark ? '#444' : '#fff';
-				mainbody.style.color = isDark ? '#eee' : '#333';
-			}
-			root.querySelectorAll('.pinkbtn').forEach(btn => {
-				btn.style.backgroundColor = isDark ? '#cc2277' : '#ee3388';
-			});
-			root.querySelectorAll('.bluebtn').forEach(btn => {
-				btn.style.backgroundColor = isDark ? '#2277cc' : '#3388ee';
-			});
-			root.querySelectorAll('.item').forEach(item => {
-				item.style.color = isDark ? '#eee' : '#333';
-			});
-			root.querySelectorAll('.small').forEach(small => {
-				small.style.color = isDark ? '#aaa' : '#888';
-			});
-			root.querySelectorAll('.headbar .leftonhb').forEach(left => {
-				left.style.color = isDark ? '#eee' : '#222';
-			});
+			walkToggle(root, isDark);
 		}
 
 		function createTransitionOverlay(newIsDark) {
 			const overlay = document.createElement('div');
 			overlay.className = 'theme-transition-overlay';
 
-		const newPanel = document.createElement('div');
-		newPanel.className = 'panel';
-		newPanel.style.backgroundColor = newIsDark ? '#333' : '#f0f0f0';
+			const newPanel = document.createElement('div');
+			newPanel.className = 'panel';
+			newPanel.style.backgroundColor = newIsDark ? '#333' : '#f0f0f0';
 
-		const scrollX = window.scrollX || window.pageXOffset;
-		const scrollY = window.scrollY || window.pageYOffset;
+			const scrollX = window.scrollX || window.pageXOffset;
+			const scrollY = window.scrollY || window.pageYOffset;
 
-		const cloneWrapper = document.createElement('div');
-		cloneWrapper.className = 'page-clone';
-		cloneWrapper.style.position = 'absolute';
-		cloneWrapper.style.top = `${-scrollY}px`;
-		cloneWrapper.style.left = `${-scrollX}px`;
-		cloneWrapper.style.padding = getComputedStyle(document.body).padding;
-		cloneWrapper.style.width = '100%';
-		cloneWrapper.style.height = '100%';
-		cloneWrapper.style.boxSizing = 'border-box';
+			const cloneWrapper = document.createElement('div');
+			cloneWrapper.className = 'page-clone';
+			cloneWrapper.style.position = 'absolute';
+			cloneWrapper.style.top = `${-scrollY}px`;
+			cloneWrapper.style.left = `${-scrollX}px`;
+			cloneWrapper.style.padding = getComputedStyle(document.body).padding;
+			cloneWrapper.style.width = '100%';
+			cloneWrapper.style.height = '100%';
+			cloneWrapper.style.boxSizing = 'border-box';
 
-		const clone = pageWrap.cloneNode(true);
-		setThemeStylesOnNode(clone, newIsDark);
-		cloneWrapper.appendChild(clone);
-		newPanel.appendChild(cloneWrapper);
+			const clone = pageWrap.cloneNode(true);
+			setThemeStylesOnNode(clone, newIsDark);
+			cloneWrapper.appendChild(clone);
+			newPanel.appendChild(cloneWrapper);
 
-		const scanline = document.createElement('div');
-		scanline.className = 'scanline';
-		newPanel.appendChild(scanline);
+			const scanline = document.createElement('div');
+			scanline.className = 'scanline';
+			newPanel.appendChild(scanline);
 
-		overlay.appendChild(newPanel);
+			overlay.appendChild(newPanel);
 
-		return { overlay, newPanel };
-	}
+			return { overlay, newPanel };
+		}
 
-	function startThemeTransition() {
-		const isDark = document.body.classList.contains('dark-mode');
-		const newIsDark = !isDark;
-		
-		// 禁用按钮
-		darkModeSwitch.classList.add('spcbtn_disabled');
-		darkModeSwitch.onclick = null;
-		
-		const { overlay, newPanel } = createTransitionOverlay(newIsDark);
-		document.body.appendChild(overlay);
-
-		requestAnimationFrame(() => {
-			newPanel.classList.add('active');
-		});
-
-		newPanel.addEventListener('transitionend', () => {
+		function finishTransition(newIsDark, overlay) {
 			setThemeStyles(newIsDark);
 			updateSwitchText(newIsDark);
 			overlay.remove();
-			
-			// 恢复按钮
 			darkModeSwitch.classList.remove('spcbtn_disabled');
 			darkModeSwitch.onclick = startThemeTransition;
-		}, { once: true });
-	}
+		}
 
-	setThemeStyles(false);
-	updateSwitchText(false);
-	document.querySelectorAll('.spcbtn_disabled').forEach(button => {
-		button.addEventListener('click', event => {
-			event.preventDefault();
-			button.classList.remove('shake');
-			void button.offsetWidth;
-			button.classList.add('shake');
+		function startThemeTransition() {
+			const isDark = document.body.classList.contains('dark-mode');
+			const newIsDark = !isDark;
+
+			darkModeSwitch.classList.add('spcbtn_disabled');
+			darkModeSwitch.onclick = null;
+
+			if (isFirefox) {
+				// Firefox: 跳过动画直接切换
+				setThemeStyles(newIsDark);
+				updateSwitchText(newIsDark);
+				darkModeSwitch.classList.remove('spcbtn_disabled');
+				darkModeSwitch.onclick = startThemeTransition;
+				return;
+			}
+
+			const { overlay, newPanel } = createTransitionOverlay(newIsDark);
+			document.body.appendChild(overlay);
+
+			requestAnimationFrame(() => {
+				newPanel.classList.add('active');
+			});
+
+			let finished = false;
+			newPanel.addEventListener('transitionend', () => {
+				if (!finished) {
+					finished = true;
+					finishTransition(newIsDark, overlay);
+				}
+			}, { once: true });
+
+			setTimeout(() => {
+				if (!finished) {
+					finished = true;
+					newPanel.style.clipPath = 'inset(0 0 0 0)';
+					finishTransition(newIsDark, overlay);
+				}
+			}, 1500);
+		}
+
+		setThemeStyles(false);
+		updateSwitchText(false);
+		document.querySelectorAll('.spcbtn_disabled').forEach(button => {
+			button.addEventListener('click', event => {
+				event.preventDefault();
+				button.classList.remove('shake');
+				void button.offsetWidth;
+				button.classList.add('shake');
+			});
 		});
-	});
 	</script>
-</body>
 </html>

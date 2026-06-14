@@ -5,6 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>码氛 (Vibe Codes) - Hooay Chen</title>
 	<link rel="stylesheet" href="../style.css">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Expires" content="0">
 	<style>
 		* {
 			margin: 0;
@@ -28,7 +31,6 @@
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			justify-content: center;
 			padding: 20px;
 		}
 		.headbar {
@@ -41,7 +43,7 @@
 			border-radius: 10px;
 			margin-bottom: 20px;
 			width: 100%;
-			max-width: 500px;
+			max-width: 700px;
 		}
 		.headbar a {
 			margin-left: 10px;
@@ -51,17 +53,25 @@
 		.headbar a:hover {
 			text-decoration: underline;
 		}
+		.hero-img {
+			width: 100%;
+			max-width: 700px;
+			border-radius: 10px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			display: block;
+		}
 		.title {
 			background-color: #fff;
 			border-radius: 10px;
-			padding: 40px;
-			text-align: center;
-			max-width: 500px;
+			padding: 20px;
+			max-width: 660px;
 			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 			margin-bottom: 20px;
+			width: 100%;
 		}
 		.title h1 {
-			font-size: 28px;
+			font-size: 24px;
 			margin-bottom: 10px;
 		}
 		.title p {
@@ -73,42 +83,45 @@
 			border-radius: 10px;
 			padding: 20px;
 			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			max-width: 660px;
+			width: 100%;
 		}
-		.section {
-			margin-bottom: 30px;
+		.project-grid {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
 		}
-		.section h2 {
-			font-size: 20px;
-			color: #3388ee;
-			margin-bottom: 15px;
-			border-bottom: 2px solid #3388ee;
-			padding-bottom: 10px;
-		}
-		.code-item {
+		.project-card {
 			background-color: #f5f5f5;
 			border-left: 4px solid #3388ee;
 			padding: 15px;
-			margin-bottom: 15px;
 			border-radius: 5px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			transition: background-color 0.2s ease;
 		}
-		.code-item-title {
+		.project-card:hover {
+			background-color: #e8e8e8;
+		}
+		.project-info {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.project-name {
 			font-weight: bold;
 			color: #333;
-			margin-bottom: 8px;
+			font-size: 15px;
 		}
-		.code-item-desc {
-			color: #666;
-			font-size: 14px;
-			margin-bottom: 8px;
+		.project-model {
+			color: #888;
+			font-size: 13px;
 		}
-		.code-item-code {
-			background-color: #2d2d2d;
-			color: #f8f8f2;
-			padding: 10px;
-			border-radius: 3px;
-			overflow-x: auto;
-			font-family: 'Courier New', monospace;
-			font-size: 12px;
+		.project-link {
+			color: #3388ee;
+			font-size: 13px;
+			white-space: nowrap;
 		}
 		.theme-transition-overlay {
 			position: fixed;
@@ -164,13 +177,46 @@
 			background-color: #444;
 			color: #eee;
 		}
-		body.dark-mode .code-item {
+		body.dark-mode .project-card {
 			background-color: #555;
 			border-left-color: #2277cc;
 		}
-		body.dark-mode .section h2 {
-			color: #2277cc;
-			border-bottom-color: #2277cc;
+		body.dark-mode .project-card:hover {
+			background-color: #4a4a4a;
+		}
+		body.dark-mode .project-name {
+			color: #eee;
+		}
+		body.dark-mode .project-model {
+			color: #aaa;
+		}
+
+		/* === 暗色模式样式 === */
+		body.dark_style {
+			background-color: #333 !important;
+			color: #eee !important;
+		}
+		.headbar.dark_style {
+			background-color: #555 !important;
+			color: #eee !important;
+		}
+		.title.dark_style {
+			background-color: #444 !important;
+			color: #eee !important;
+		}
+		.content.dark_style {
+			background-color: #444 !important;
+			color: #eee !important;
+		}
+		.project-card.dark_style {
+			background-color: #555 !important;
+			border-left-color: #2277cc !important;
+		}
+		.project-name.dark_style {
+			color: #eee !important;
+		}
+		.project-model.dark_style {
+			color: #aaa !important;
 		}
 	</style>
 </head>
@@ -183,22 +229,40 @@
 				<button id="dark-mode-switch" onclick="startThemeTransition()" style="background-color: #ccc; color: #222; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;"></button>
 			</div>
 		</div>
+
+		<img src="人机程序员.png" alt="人机程序员" class="hero-img">
+
 		<div class="title">
-			<h1>这里暂时什么也没有哦~ 🥰</h1>
-			<p>敬请期待更多有趣的代码片段和编程技巧！</p>
+			<h1>AI 生成项目合集</h1>
+			<p>这里收录了由各种 AI 模型生成的 HTML 页面，每一行代码都是人机协作的产物 🤖✨</p>
+		</div>
+
+		<div class="content" id="projectsContent">
+			<div class="project-grid" id="projectList">
+				<!-- JS 动态生成 -->
+			</div>
 		</div>
 	</div>
 
+	</body>
 	<script>
+		const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 		const pageWrap = document.querySelector('.page-wrap');
 		const darkModeSwitch = document.getElementById('dark-mode-switch');
 
+		function walkToggle(root, isDark) {
+			const all = root.querySelectorAll('*');
+			for (let i = 0; i < all.length; i++) {
+				all[i].classList.toggle('dark_style', isDark);
+			}
+			if (root.classList) {
+				root.classList.toggle('dark_style', isDark);
+			}
+		}
+
 		function setThemeStyles(isDark) {
 			document.body.classList.toggle('dark-mode', isDark);
-			document.body.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-			document.body.style.color = isDark ? '#eee' : '#333';
-			document.querySelector('.headbar').style.backgroundColor = isDark ? '#555' : '#eee';
-			document.querySelector('.headbar').style.color = isDark ? '#eee' : '#222';
+			walkToggle(document.body, isDark);
 		}
 
 		function updateSwitchText(isDark) {
@@ -206,15 +270,7 @@
 		}
 
 		function setThemeStylesOnNode(root, isDark) {
-			if (root instanceof HTMLElement) {
-				root.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-				root.style.color = isDark ? '#eee' : '#333';
-			}
-			const headbar = root.querySelector('.headbar');
-			if (headbar) {
-				headbar.style.backgroundColor = isDark ? '#555' : '#eee';
-				headbar.style.color = isDark ? '#eee' : '#222';
-			}
+			walkToggle(root, isDark);
 		}
 
 		function createTransitionOverlay(newIsDark) {
@@ -252,13 +308,29 @@
 			return { overlay, newPanel };
 		}
 
+		function finishTransition(newIsDark, overlay) {
+			setThemeStyles(newIsDark);
+			updateSwitchText(newIsDark);
+			overlay.remove();
+			darkModeSwitch.classList.remove('spcbtn_disabled');
+			darkModeSwitch.onclick = startThemeTransition;
+		}
+
 		function startThemeTransition() {
 			const isDark = document.body.classList.contains('dark-mode');
 			const newIsDark = !isDark;
-			
+
 			darkModeSwitch.classList.add('spcbtn_disabled');
 			darkModeSwitch.onclick = null;
-			
+
+			if (isFirefox) {
+				setThemeStyles(newIsDark);
+				updateSwitchText(newIsDark);
+				darkModeSwitch.classList.remove('spcbtn_disabled');
+				darkModeSwitch.onclick = startThemeTransition;
+				return;
+			}
+
 			const { overlay, newPanel } = createTransitionOverlay(newIsDark);
 			document.body.appendChild(overlay);
 
@@ -266,18 +338,45 @@
 				newPanel.classList.add('active');
 			});
 
+			let finished = false;
 			newPanel.addEventListener('transitionend', () => {
-				setThemeStyles(newIsDark);
-				updateSwitchText(newIsDark);
-				overlay.remove();
-				
-				darkModeSwitch.classList.remove('spcbtn_disabled');
-				darkModeSwitch.onclick = startThemeTransition;
+				if (!finished) {
+					finished = true;
+					finishTransition(newIsDark, overlay);
+				}
 			}, { once: true });
+
+			setTimeout(() => {
+				if (!finished) {
+					finished = true;
+					newPanel.style.clipPath = 'inset(0 0 0 0)';
+					finishTransition(newIsDark, overlay);
+				}
+			}, 1500);
+		}
+
+		// 项目数据：从文件名解析 (模型 - 项目名.html)
+		const projects = [
+			{ file: 'DeepSeek - 美国象棋.html', model: 'DeepSeek', name: '美国象棋' },
+			{ file: '豆包 - 游戏测试2.0.html', model: '豆包', name: '游戏测试2.0' },
+			{ file: '豆包 - 游戏测试.html', model: '豆包', name: '游戏测试' },
+		];
+
+		function renderProjects() {
+			const list = document.getElementById('projectList');
+			list.innerHTML = projects.map(p => `
+				<a href="${p.file}" class="project-card" target="_blank">
+					<div class="project-info">
+						<div class="project-name">${p.name}</div>
+						<div class="project-model">🤖 ${p.model}</div>
+					</div>
+					<span class="project-link">打开 →</span>
+				</a>
+			`).join('');
 		}
 
 		setThemeStyles(false);
 		updateSwitchText(false);
+		renderProjects();
 	</script>
-</body>
 </html>
