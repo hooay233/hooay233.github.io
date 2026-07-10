@@ -6,36 +6,6 @@
 	<title>我的项目 - Hooay Chen</title>
 	<link rel="stylesheet" href="../style.css">
 	<style>
-		* {
-			margin: 0;
-			padding: 0;
-		}
-		body {
-			background-color: #f0f0f0;
-			color: #333;
-			padding: 20px;
-		}
-		a {
-			color: #ee3388;
-			text-decoration: none;
-		}
-		a:hover {
-			text-decoration: underline;
-		}
-		.page-wrap {
-			min-height: 100vh;
-			padding: 20px;
-		}
-		.headbar {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			background-color: #eee;
-			color: #222;
-			padding: 10px 20px;
-			border-radius: 10px;
-			margin-bottom: 20px;
-		}
 		.headbar a {
 			margin-left: 10px;
 			color: #ee3388;
@@ -45,10 +15,6 @@
 			text-decoration: underline;
 		}
 		.title {
-			background-color: #fff;
-			border-radius: 10px;
-			padding: 20px;
-			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 			margin-bottom: 20px;
 		}
 		.projects-container {
@@ -144,47 +110,6 @@
 		.filter-btn:hover {
 			transform: scale(1.05);
 		}
-		.theme-transition-overlay {
-			position: fixed;
-			top: 0;
-			right: 0;
-			bottom: 0;
-			left: 0;
-			z-index: 9999;
-			pointer-events: none;
-			overflow: hidden;
-		}
-		.theme-transition-overlay .panel {
-			position: fixed;
-			inset: 0;
-			z-index: 9999;
-			overflow: hidden;
-			pointer-events: none;
-			transition: clip-path 0.75s ease;
-			clip-path: inset(0 calc(100% - 4px) 0 0);
-		}
-		.theme-transition-overlay .panel.active {
-			clip-path: inset(0 0 0 0);
-		}
-		.theme-transition-overlay .page-clone {
-			position: absolute;
-			inset: 0;
-			width: 100%;
-			height: 100%;
-			overflow: hidden;
-			pointer-events: none;
-			box-sizing: border-box;
-		}
-		.theme-transition-overlay .scanline {
-			position: absolute;
-			top: 0;
-			right: 0;
-			width: 4px;
-			height: 100%;
-			background: rgba(255,255,255,0.95);
-			box-shadow: 0 0 12px rgba(255,255,255,0.5);
-			pointer-events: none;
-		}
 		body.dark-mode {
 			background-color: #333;
 			color: #eee;
@@ -207,18 +132,6 @@
 		}
 
 		/* === 暗色模式样式 === */
-		body.dark_style {
-			background-color: #333 !important;
-			color: #eee !important;
-		}
-		.headbar.dark_style {
-			background-color: #555 !important;
-			color: #eee !important;
-		}
-		.title.dark_style {
-			background-color: #444 !important;
-			color: #eee !important;
-		}
 		.project-card.dark_style {
 			background-color: #444 !important;
 			color: #eee !important;
@@ -253,119 +166,8 @@
 	</div>
 
 	</body>
+	<script src="../theme.js"></script>
 	<script>
-		const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-		const pageWrap = document.querySelector('.page-wrap');
-		const darkModeSwitch = document.getElementById('dark-mode-switch');
-
-		const projects = [];
-
-		function walkToggle(root, isDark) {
-			const all = root.querySelectorAll('*');
-			for (let i = 0; i < all.length; i++) {
-				all[i].classList.toggle('dark_style', isDark);
-			}
-			if (root.classList) {
-				root.classList.toggle('dark_style', isDark);
-			}
-		}
-
-		function setThemeStyles(isDark) {
-			document.body.classList.toggle('dark-mode', isDark);
-			walkToggle(document.body, isDark);
-		}
-
-		function updateSwitchText(isDark) {
-			darkModeSwitch.textContent = isDark ? '切换到亮色模式' : '切换到暗色模式';
-		}
-
-		function setThemeStylesOnNode(root, isDark) {
-			walkToggle(root, isDark);
-		}
-
-		function createTransitionOverlay(newIsDark) {
-			const overlay = document.createElement('div');
-			overlay.className = 'theme-transition-overlay';
-
-			const newPanel = document.createElement('div');
-			newPanel.className = 'panel';
-			newPanel.style.backgroundColor = newIsDark ? '#333' : '#f0f0f0';
-
-			const scrollX = window.scrollX || window.pageXOffset;
-			const scrollY = window.scrollY || window.pageYOffset;
-
-			const cloneWrapper = document.createElement('div');
-			cloneWrapper.className = 'page-clone';
-			cloneWrapper.style.position = 'absolute';
-			cloneWrapper.style.top = `${-scrollY}px`;
-			cloneWrapper.style.left = `${-scrollX}px`;
-			cloneWrapper.style.padding = getComputedStyle(document.body).padding;
-			cloneWrapper.style.width = '100%';
-			cloneWrapper.style.height = '100%';
-			cloneWrapper.style.boxSizing = 'border-box';
-
-			const clone = pageWrap.cloneNode(true);
-			setThemeStylesOnNode(clone, newIsDark);
-			cloneWrapper.appendChild(clone);
-			newPanel.appendChild(cloneWrapper);
-
-			const scanline = document.createElement('div');
-			scanline.className = 'scanline';
-			newPanel.appendChild(scanline);
-
-			overlay.appendChild(newPanel);
-
-			return { overlay, newPanel };
-		}
-
-		function finishTransition(newIsDark, overlay) {
-			setThemeStyles(newIsDark);
-			updateSwitchText(newIsDark);
-			overlay.remove();
-			darkModeSwitch.classList.remove('spcbtn_disabled');
-			darkModeSwitch.onclick = startThemeTransition;
-		}
-
-		function startThemeTransition() {
-			const isDark = document.body.classList.contains('dark-mode');
-			const newIsDark = !isDark;
-
-			darkModeSwitch.classList.add('spcbtn_disabled');
-			darkModeSwitch.onclick = null;
-
-			if (isFirefox) {
-				// Firefox: 跳过动画直接切换
-				setThemeStyles(newIsDark);
-				updateSwitchText(newIsDark);
-				darkModeSwitch.classList.remove('spcbtn_disabled');
-				darkModeSwitch.onclick = startThemeTransition;
-				return;
-			}
-
-			const { overlay, newPanel } = createTransitionOverlay(newIsDark);
-			document.body.appendChild(overlay);
-
-			requestAnimationFrame(() => {
-				newPanel.classList.add('active');
-			});
-
-			let finished = false;
-			newPanel.addEventListener('transitionend', () => {
-				if (!finished) {
-					finished = true;
-					finishTransition(newIsDark, overlay);
-				}
-			}, { once: true });
-
-			setTimeout(() => {
-				if (!finished) {
-					finished = true;
-					newPanel.style.clipPath = 'inset(0 0 0 0)';
-					finishTransition(newIsDark, overlay);
-				}
-			}, 1500);
-		}
-
 		// 从GitHub API获取项目
 		async function loadProjects() {
 			try {

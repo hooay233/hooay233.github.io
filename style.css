@@ -2,6 +2,11 @@
 	margin: 0;
 	padding: 0;
 }
+body {
+	background-color: #f0f0f0;
+	color: #333;
+	padding: 20px;
+}
 a {
 	color: #ee3388;
 	text-decoration: none;
@@ -10,6 +15,26 @@ a:hover {
 	text-decoration: underline;
 	transform: scale(1.2);
 	transition: transform 0.3s ease;
+}
+.page-wrap {
+	min-height: 100vh;
+	padding: 20px;
+}
+.headbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background-color: #eee;
+	color: #222;
+	padding: 10px 20px;
+	border-radius: 10px;
+	margin-bottom: 20px;
+}
+.title {
+	background-color: #fff;
+	border-radius: 10px;
+	padding: 20px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 .spcbtn_disabled {
 	cursor: pointer;
@@ -27,4 +52,180 @@ a:hover {
 }
 .spcbtn_disabled.shake {
 	animation: shake-head 0.35s ease;
+}
+.theme-transition-overlay {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 9999;
+	pointer-events: none;
+	overflow: hidden;
+}
+.theme-transition-overlay .panel {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	overflow: hidden;
+	pointer-events: none;
+	transition: clip-path 0.75s ease;
+	clip-path: inset(0 calc(100% - 4px) 0 0);
+}
+.theme-transition-overlay .panel.active {
+	clip-path: inset(0 0 0 0);
+}
+.theme-transition-overlay .page-clone {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	pointer-events: none;
+	box-sizing: border-box;
+}
+.theme-transition-overlay .scanline {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 4px;
+	height: 100%;
+	background: rgba(255,255,255,0.95);
+	box-shadow: 0 0 12px rgba(255,255,255,0.5);
+	pointer-events: none;
+}
+body.dark_style {
+	background-color: #333 !important;
+	color: #eee !important;
+}
+.headbar.dark_style {
+	background-color: #555 !important;
+	color: #eee !important;
+}
+.title.dark_style {
+	background-color: #444 !important;
+	color: #eee !important;
+}
+button {
+	font-size: 16px;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+}
+.pinkbtn {
+	background-color: #ee3388;
+	color: #fff;
+}
+.pinkbtn:hover {
+	background-color: #cc2277;
+	transform: scale(1.2);
+	transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.bluebtn {
+	background-color: #3388ee;
+	color: #fff;
+}
+.bluebtn:hover {
+	background-color: #2277cc;
+	transform: scale(1.2);
+	transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.graybtn {
+	background-color: #ccc;
+	color: #222;
+}
+.graybtn:hover {
+	background-color: #999;
+	transition: background-color 0.3s ease;
+}
+.pinkbtn.button-link, .bluebtn.button-link {
+	display: inline-block;
+	padding: 10px 20px;
+	border-radius: 5px;
+	text-decoration: none !important;
+	cursor: pointer;
+	font-size: 16px;
+	border: none;
+	transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.pinkbtn.button-link {
+	background-color: #ee3388;
+	color: #fff !important;
+}
+.pinkbtn.button-link:hover {
+	background-color: #cc2277;
+	transform: scale(1.2);
+	text-decoration: none;
+}
+.bluebtn.button-link {
+	background-color: #3388ee;
+	color: #fff !important;
+}
+.bluebtn.button-link:hover {
+	background-color: #2277cc;
+	transform: scale(1.2);
+	text-decoration: none;
+}
+.pinkbtn.dark_style {
+	background-color: #cc2277 !important;
+}
+.bluebtn.dark_style {
+	background-color: #2277cc !important;
+}
+.bigger {
+	font-size: 24px;
+	font-weight: bold;
+}
+.small {
+	font-size: 14px;
+	color: #888;
+}
+.small.dark_style {
+	color: #aaa !important;
+}
+
+/* === index.html 专属 === */
+.item {
+	display: block;
+	margin-top: 10px;
+	font-size: 16px;
+}
+.leftonhb {
+	font-size: 18px;
+	font-weight: bold;
+}
+.rightonhb button {
+	background-color: #ccc;
+	color: #222;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+}
+.rightonhb button:hover {
+	background-color: #777;
+	transition: background-color 0.3s;
+}
+.mainbody {
+	margin-top: 20px;
+	padding: 20px;
+	background-color: #fff;
+	border-radius: 10px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	text-align: center;
+}
+.mainbody .item {
+	display: inline-block;
+	margin-right: 20px;
+}
+.mainbody.dark_style {
+	background-color: #444 !important;
+	color: #eee !important;
+}
+.item.dark_style {
+	color: #eee !important;
+}
+.headbar .leftonhb.dark_style {
+	color: #eee !important;
 }

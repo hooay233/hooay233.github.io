@@ -1,389 +1,557 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>游戏人格MBTI测试｜测出你的本命游戏</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Microsoft Yahei", sans-serif;
-    }
-    body {
-      background: #12141d;
-      color: #fff;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .title-box {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    .title-box h1 {
-      font-size: 28px;
-      color: #f0d890;
-      margin-bottom: 10px;
-    }
-    .title-box p {
-      color: #aaa;
-      font-size: 15px;
-    }
-    .question-box {
-      display: none;
-      margin-bottom: 30px;
-    }
-    .question-box.active {
-      display: block;
-    }
-    .q-title {
-      font-size: 18px;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-    .option-item {
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 14px 18px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .option-item:hover {
-      border-color: #f0d890;
-      background: rgba(240, 216, 144, 0.08);
-    }
-    .option-item.selected {
-      border-color: #f0d890;
-      background: rgba(240, 216, 144, 0.15);
-    }
-    .next-btn {
-      margin-top: 25px;
-      width: 100%;
-      padding: 13px;
-      border: none;
-      border-radius: 8px;
-      background: #f0d890;
-      color: #111;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .next-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-    .loading-wrap {
-      display: none;
-      text-align: center;
-      padding: 80px 0;
-    }
-    .loading-wrap.show {
-      display: block;
-    }
-    .loader {
-      width: 60px;
-      height: 60px;
-      border: 5px solid #333;
-      border-top-color: #f0d890;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .result-wrap {
-      display: none;
-      text-align: center;
-      padding: 30px 0;
-    }
-    .result-wrap.show {
-      display: block;
-    }
-    .game-name {
-      font-size: 36px;
-      color: #f0d890;
-      margin: 30px 0;
-    }
-    .ask-text {
-      margin: 30px 0 20px;
-      font-size: 17px;
-    }
-    .btn-group button {
-      padding: 10px 26px;
-      margin: 0 8px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    .joke-tip {
-      margin-top: 30px;
-      color: #ff9494;
-      font-size: 16px;
-      display: none;
-    }
-    .joke-tip.show {
-      display: block;
-    }
-  </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>游戏人格MBTI深度测试｜本命游戏鉴定</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: "Microsoft Yahei", sans-serif;
+		}
+
+		body {
+			background: #12141d;
+			color: #fff;
+			min-height: 100vh;
+			padding: 40px 20px;
+		}
+
+		.container {
+			max-width: 600px;
+			margin: 0 auto;
+		}
+
+		.title-box {
+			text-align: center;
+			margin-bottom: 40px;
+		}
+
+		.title-box h1 {
+			font-size: 28px;
+			color: #f0d890;
+			margin-bottom: 10px;
+		}
+
+		.title-box p {
+			color: #aaa;
+			font-size: 15px;
+		}
+
+		.question-box {
+			display: none;
+			margin-bottom: 30px;
+		}
+
+		.question-box.active {
+			display: block;
+		}
+
+		.q-title {
+			font-size: 18px;
+			margin-bottom: 20px;
+			line-height: 1.6;
+		}
+
+		.option-item {
+			border: 1px solid #444;
+			border-radius: 8px;
+			padding: 14px 18px;
+			margin-bottom: 12px;
+			cursor: pointer;
+			transition: 0.2s;
+		}
+
+		.option-item:hover {
+			border-color: #f0d890;
+			background: rgba(240, 216, 144, 0.08);
+		}
+
+		.option-item.selected {
+			border-color: #f0d890;
+			background: rgba(240, 216, 144, 0.15);
+		}
+
+		.next-btn {
+			margin-top: 25px;
+			width: 100%;
+			padding: 13px;
+			border: none;
+			border-radius: 8px;
+			background: #f0d890;
+			color: #111;
+			font-size: 16px;
+			font-weight: bold;
+			cursor: pointer;
+		}
+
+		.next-btn:disabled {
+			opacity: 0.4;
+			cursor: not-allowed;
+		}
+
+		.loading-wrap {
+			display: none;
+			text-align: center;
+			padding: 80px 0;
+		}
+
+		.loading-wrap.show {
+			display: block;
+		}
+
+		.loader {
+			width: 60px;
+			height: 60px;
+			border: 5px solid #333;
+			border-top-color: #f0d890;
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+			margin: 0 auto 20px;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		/* 蔚蓝档案结果面板 */
+		.res-blue {
+			display: none;
+			text-align: center;
+			padding: 30px 0;
+		}
+
+		.res-blue.show {
+			display: block;
+		}
+
+		/* 原神结果面板（分两种状态） */
+		.res-genshin-normal {
+			display: none;
+			text-align: center;
+			padding: 30px 0;
+		}
+
+		.res-genshin-normal.show {
+			display: block;
+		}
+
+		.res-genshin-after-blue {
+			display: none;
+			text-align: center;
+			padding: 30px 0;
+		}
+
+		.res-genshin-after-blue.show {
+			display: block;
+		}
+
+		.game-name {
+			font-size: 36px;
+			color: #f0d890;
+			margin: 30px 0;
+		}
+
+		.ask-text {
+			margin: 30px 0 20px;
+			font-size: 17px;
+		}
+
+		.ask-after-god {
+			margin-top: 24px;
+			font-size: 18px;
+			color: #ffe0a0;
+			display: none;
+		}
+
+		.ask-after-god.show {
+			display: block;
+		}
+
+		.joke-tip-blue {
+			margin-top: 30px;
+			color: #ff9494;
+			font-size: 16px;
+			display: none;
+		}
+
+		.joke-tip-blue.show {
+			display: block;
+		}
+
+		.joke-tip-normal {
+			margin-top: 30px;
+			color: #ff9494;
+			font-size: 16px;
+			display: none;
+		}
+
+		.joke-tip-normal.show {
+			display: block;
+		}
+
+		.btn-group button {
+			padding: 10px 26px;
+			margin: 0 8px;
+			border-radius: 6px;
+			border: none;
+			cursor: pointer;
+			font-size: 15px;
+		}
+
+		/* 自制弹窗遮罩 */
+		.modal-mask {
+			position: fixed;
+			inset: 0;
+			background: rgba(0, 0, 0, 0.75);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 999;
+		}
+
+		.modal-mask.show {
+			display: flex;
+		}
+
+		.modal-box {
+			background: #222;
+			padding: 40px 60px;
+			border-radius: 12px;
+			font-size: 22px;
+			color: #f0d890;
+		}
+
+	</style>
 </head>
+
 <body>
-<div class="container">
-  <div class="title-box">
-    <h1>游戏人格MBTI深度测试</h1>
-    <p>回答20道问题，系统多维度解析你的本命游戏</p>
-  </div>
+	<div class="container">
+		<div class="title-box">
+			<h1>游戏人格MBTI深度测试</h1>
+			<p>回答21道问题，系统多维度解析你的本命游戏</p>
+		</div>
 
-  <div class="q-list">
-    <!-- 第1题 -->
-    <div class="question-box active" data-index="0">
-      <div class="q-title">1. 你偏爱哪种游戏世界观？</div>
-      <div class="option-item">A. 奇幻架空大世界，适合自由探索</div>
-      <div class="option-item">B. 现代都市写实背景</div>
-      <div class="option-item">C. 未来科幻星际宇宙</div>
-      <div class="option-item">D. 古典武侠古风江湖</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第2题 -->
-    <div class="question-box" data-index="1">
-      <div class="q-title">2. 玩游戏最吸引你的点是？</div>
-      <div class="option-item">A. 丰富人设与完整主线剧情</div>
-      <div class="option-item">B. 竞技对抗、靠操作取胜</div>
-      <div class="option-item">C. 收集养成、慢慢养老玩法</div>
-      <div class="option-item">D. 和朋友组队联机社交</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第3题 -->
-    <div class="question-box" data-index="2">
-      <div class="q-title">3. 你对于抽卡获取角色的态度？</div>
-      <div class="option-item">A. 喜欢收集不同特色角色，可以接受抽卡</div>
-      <div class="option-item">B. 随缘抽卡，出啥用啥不硬氪</div>
-      <div class="option-item">C. 不太喜欢，但游戏好玩可以包容</div>
-      <div class="option-item">D. 坚决不玩带抽卡的游戏</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第4题 -->
-    <div class="question-box" data-index="3">
-      <div class="q-title">4. 你的日常游戏上线状态是？</div>
-      <div class="option-item">A. 每天短时间登录清日常，长草玩家</div>
-      <div class="option-item">B. 有空就爆肝，忙起来几天不上线</div>
-      <div class="option-item">C. 一周上线两三次佛系体验</div>
-      <div class="option-item">D. 一有空就长时间泡在游戏里</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第5题 -->
-    <div class="question-box" data-index="4">
-      <div class="q-title">5. 更喜欢哪种战斗模式？</div>
-      <div class="option-item">A. 大世界自由即时战斗，可以随时切角色</div>
-      <div class="option-item">B. 策略回合制战斗</div>
-      <div class="option-item">C. FPS快节奏射击对战</div>
-      <div class="option-item">D. MOBA多人对线团战</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第6题 -->
-    <div class="question-box" data-index="5">
-      <div class="q-title">6. 面对游戏剧情你通常会？</div>
-      <div class="option-item">A. 逐字看完，沉浸代入故事</div>
-      <div class="option-item">B. 只看关键主线，支线直接跳过</div>
-      <div class="option-item">C. 无聊时看两眼，大部分跳过</div>
-      <div class="option-item">D. 全部跳过，只玩打怪玩法</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第7题 -->
-    <div class="question-box" data-index="6">
-      <div class="q-title">7. 最戳你的美术画风是？</div>
-      <div class="option-item">A. 精致二次元卡通唯美画风</div>
-      <div class="option-item">B. 电影级超写实质感画风</div>
-      <div class="option-item">C. 怀旧像素复古画风</div>
-      <div class="option-item">D. 暗黑压抑硬核写实风</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第8题 -->
-    <div class="question-box" data-index="7">
-      <div class="q-title">8. 跑图探索地图时你的习惯？</div>
-      <div class="option-item">A. 全地图清探索度，找齐所有宝箱彩蛋</div>
-      <div class="option-item">B. 只走主线标记路径，多余地方不去</div>
-      <div class="option-item">C. 看到好看风景就绕路闲逛</div>
-      <div class="option-item">D. 讨厌跑图，能传送绝不走路</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第9题 -->
-    <div class="question-box" data-index="8">
-      <div class="q-title">9. 游玩偏好是单人还是多人？</div>
-      <div class="option-item">A. 偏爱单人慢慢玩，不喜欢被打扰</div>
-      <div class="option-item">B. 主打单人，偶尔和朋友联机帮忙</div>
-      <div class="option-item">C. 必须多人开黑，一个人玩没意思</div>
-      <div class="option-item">D. 单人多人都可以，无所谓</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第10题 -->
-    <div class="question-box" data-index="9">
-      <div class="q-title">10. 对于角色养成系统你的看法？</div>
-      <div class="option-item">A. 乐意培养一队不同定位的角色</div>
-      <div class="option-item">B. 只养几个强力主C，其余随缘</div>
-      <div class="option-item">C. 不卷练度，能通关就行</div>
-      <div class="option-item">D. 反感复杂的装备等级养成系统</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第11题 -->
-    <div class="question-box" data-index="10">
-      <div class="q-title">11. 你玩游戏最想要哪种情绪体验？</div>
-      <div class="option-item">A. 治愈放松，解压打发时间</div>
-      <div class="option-item">B. 紧张刺激，上分带来成就感</div>
-      <div class="option-item">C. 动脑解谜，挖掘隐藏秘密</div>
-      <div class="option-item">D. 挑战高难度BOSS突破自我</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第12题 -->
-    <div class="question-box" data-index="11">
-      <div class="q-title">12. 你怎么看待游戏里的背景音乐？</div>
-      <div class="option-item">A. 很在意，好听的BGM会大幅加分</div>
-      <div class="option-item">B. 还行，不难听就可以</div>
-      <div class="option-item">C. 经常静音放自己歌单</div>
-      <div class="option-item">D. 完全不在意音乐好坏</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第13题 -->
-    <div class="question-box" data-index="12">
-      <div class="q-title">13. 你更喜欢任务是什么形式？</div>
-      <div class="option-item">A. 自然触发的世界任务、传说任务</div>
-      <div class="option-item">B. 清晰列表式每日周常任务</div>
-      <div class="option-item">C. 随机刷新的突发事件</div>
-      <div class="option-item">D. 干脆不要任务自由玩</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第14题 -->
-    <div class="question-box" data-index="13">
-      <div class="q-title">14. 游戏更新节奏你更喜欢？</div>
-      <div class="option-item">A. 缓慢长线更新，慢慢打磨内容</div>
-      <div class="option-item">B. 稳定版本更新，每期有新内容</div>
-      <div class="option-item">C. 快速大量更新，内容越多越好</div>
-      <div class="option-item">D. 最好一次做完不再更新</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第15题 -->
-    <div class="question-box" data-index="14">
-      <div class="q-title">15. 遇到难打的BOSS你会？</div>
-      <div class="option-item">A. 慢慢研究机制，调整角色阵容通关</div>
-      <div class="option-item">B. 练度拉高硬堆数值碾压过去</div>
-      <div class="option-item">C. 找大佬联机帮忙带过</div>
-      <div class="option-item">D. 直接放弃不打了</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第16题 -->
-    <div class="question-box" data-index="15">
-      <div class="q-title">16. 你对游戏里的风景打卡态度？</div>
-      <div class="option-item">A. 热衷于爬山看风景截图留念</div>
-      <div class="option-item">B. 偶尔看到好看的会停下看一看</div>
-      <div class="option-item">C. 赶路为主，很少留意场景</div>
-      <div class="option-item">D. 场景只是贴图，完全不关心</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第17题 -->
-    <div class="question-box" data-index="16">
-      <div class="q-title">17. 你愿意为游戏花钱的程度？</div>
-      <div class="option-item">A. 偶尔小月卡支持，不重氪</div>
-      <div class="option-item">B. 看中角色会适当抽几发</div>
-      <div class="option-item">C. 只愿意花一次买断费用</div>
-      <div class="option-item">D. 游戏绝对一分钱不充</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第18题 -->
-    <div class="question-box" data-index="17">
-      <div class="q-title">18. 你喜欢角色之间有剧情羁绊吗？</div>
-      <div class="option-item">A. 非常喜欢，看重角色之间的互动故事</div>
-      <div class="option-item">B. 有一点就够，不用太多</div>
-      <div class="option-item">C. 无所谓，角色能用就行</div>
-      <div class="option-item">D. 不需要角色有额外剧情</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第19题 -->
-    <div class="question-box" data-index="18">
-      <div class="q-title">19. 你玩游戏最忌讳下面哪一点？</div>
-      <div class="option-item">A. 地图狭小没有探索空间</div>
-      <div class="option-item">B. 角色同质化严重没特色</div>
-      <div class="option-item">C. 强制逼氪逼肝</div>
-      <div class="option-item">D. 玩法单一重复无聊</div>
-      <button class="next-btn" disabled>下一题</button>
-    </div>
-    <!-- 第20题 -->
-    <div class="question-box" data-index="19">
-      <div class="q-title">20. 空闲无聊的时候最先想打开哪种游戏？</div>
-      <div class="option-item">A. 可以随意逛地图闲逛的开放世界</div>
-      <div class="option-item">B. 来一把快速对局的竞技游戏</div>
-      <div class="option-item">C. 收菜养成类休闲小游戏</div>
-      <div class="option-item">D. 多人组队副本类网游</div>
-      <button class="next-btn" disabled>查看测试结果</button>
-    </div>
-  </div>
+		<div class="q-list">
+			<!-- 第1题 -->
+			<div class="question-box active" data-index="0">
+				<div class="q-title">1. 你偏爱哪种游戏世界观？</div>
+				<div class="option-item">A. 奇幻架空大世界，适合自由探索</div>
+				<div class="option-item">B. 现代都市写实背景</div>
+				<div class="option-item">C. 未来科幻星际宇宙</div>
+				<div class="option-item">D. 古典武侠古风江湖</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第2题 -->
+			<div class="question-box" data-index="1">
+				<div class="q-title">2. 玩游戏最吸引你的点是？</div>
+				<div class="option-item">A. 丰富人设与完整主线剧情</div>
+				<div class="option-item">B. 竞技对抗、靠操作取胜</div>
+				<div class="option-item">C. 收集养成、慢慢养老玩法</div>
+				<div class="option-item">D. 和朋友组队联机社交</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第3题 分支题：角色成熟度 -->
+			<div class="question-box" data-index="2" data-key="branchQ">
+				<div class="q-title">3. 对于角色的成熟度你更倾向于？</div>
+				<div class="option-item" data-tag="A">A. 萝莉</div>
+				<div class="option-item" data-tag="B">B. 少女</div>
+				<div class="option-item" data-tag="C">C. 熟女</div>
+				<div class="option-item" data-tag="D">D. 老太婆</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第4题 -->
+			<div class="question-box" data-index="3">
+				<div class="q-title">4. 你对于抽卡获取角色的态度？</div>
+				<div class="option-item">A. 喜欢收集不同特色角色，可以接受抽卡</div>
+				<div class="option-item">B. 随缘抽卡，出啥用啥不硬氪</div>
+				<div class="option-item">C. 不太喜欢，但游戏好玩可以包容</div>
+				<div class="option-item">D. 坚决不玩带抽卡的游戏</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第5题 -->
+			<div class="question-box" data-index="4">
+				<div class="q-title">5. 你的日常游戏上线状态是？</div>
+				<div class="option-item">A. 每天短时间登录清日常，长草玩家</div>
+				<div class="option-item">B. 有空就爆肝，忙起来几天不上线</div>
+				<div class="option-item">C. 一周上线两三次佛系体验</div>
+				<div class="option-item">D. 一有空就长时间泡在游戏里</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第6题 -->
+			<div class="question-box" data-index="5">
+				<div class="q-title">6. 更喜欢哪种战斗模式？</div>
+				<div class="option-item">A. 大世界自由即时战斗，可以随时切角色</div>
+				<div class="option-item">B. 策略回合制战斗</div>
+				<div class="option-item">C. FPS快节奏射击对战</div>
+				<div class="option-item">D. MOBA多人对线团战</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第7题 -->
+			<div class="question-box" data-index="6">
+				<div class="q-title">7. 面对游戏剧情你通常会？</div>
+				<div class="option-item">A. 逐字看完，沉浸代入故事</div>
+				<div class="option-item">B. 只看关键主线，支线直接跳过</div>
+				<div class="option-item">C. 无聊时看两眼，大部分跳过</div>
+				<div class="option-item">D. 全部跳过，只玩打怪玩法</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第8题 -->
+			<div class="question-box" data-index="7">
+				<div class="q-title">8. 最戳你的美术画风是？</div>
+				<div class="option-item">A. 精致二次元卡通唯美画风</div>
+				<div class="option-item">B. 电影级超写实质感画风</div>
+				<div class="option-item">C. 怀旧像素复古画风</div>
+				<div class="option-item">D. 暗黑压抑硬核写实风</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第9题 -->
+			<div class="question-box" data-index="8">
+				<div class="q-title">9. 跑图探索地图时你的习惯？</div>
+				<div class="option-item">A. 全地图清探索度，找齐所有宝箱彩蛋</div>
+				<div class="option-item">B. 只走主线标记路径，多余地方不去</div>
+				<div class="option-item">C. 看到好看风景就绕路闲逛</div>
+				<div class="option-item">D. 讨厌跑图，能传送绝不走路</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第10题 -->
+			<div class="question-box" data-index="9">
+				<div class="q-title">10. 游玩偏好是单人还是多人？</div>
+				<div class="option-item">A. 偏爱单人慢慢玩，不喜欢被打扰</div>
+				<div class="option-item">B. 主打单人，偶尔和朋友联机帮忙</div>
+				<div class="option-item">C. 必须多人开黑，一个人玩没意思</div>
+				<div class="option-item">D. 单人多人都可以，无所谓</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第11题 -->
+			<div class="question-box" data-index="10">
+				<div class="q-title">11. 对于角色养成系统你的看法？</div>
+				<div class="option-item">A. 乐意培养一队不同定位的角色</div>
+				<div class="option-item">B. 只养几个强力主C，其余随缘</div>
+				<div class="option-item">C. 不卷练度，能通关就行</div>
+				<div class="option-item">D. 反感复杂的装备等级养成系统</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第12题 -->
+			<div class="question-box" data-index="11">
+				<div class="q-title">12. 你玩游戏最想要哪种情绪体验？</div>
+				<div class="option-item">A. 治愈放松，解压打发时间</div>
+				<div class="option-item">B. 紧张刺激，上分带来成就感</div>
+				<div class="option-item">C. 动脑解谜，挖掘隐藏秘密</div>
+				<div class="option-item">D. 挑战高难度BOSS突破自我</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第13题 -->
+			<div class="question-box" data-index="12">
+				<div class="q-title">13. 你怎么看待游戏里的背景音乐？</div>
+				<div class="option-item">A. 很在意，好听的BGM会大幅加分</div>
+				<div class="option-item">B. 还行，不难听就可以</div>
+				<div class="option-item">C. 经常静音放自己歌单</div>
+				<div class="option-item">D. 完全不在意音乐好坏</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第14题 -->
+			<div class="question-box" data-index="13">
+				<div class="q-title">14. 你更喜欢任务是什么形式？</div>
+				<div class="option-item">A. 自然触发的世界任务、传说任务</div>
+				<div class="option-item">B. 清晰列表式每日周常任务</div>
+				<div class="option-item">C. 随机刷新的突发事件</div>
+				<div class="option-item">D. 干脆不要任务自由玩</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第15题 -->
+			<div class="question-box" data-index="14">
+				<div class="q-title">15. 游戏更新节奏你更喜欢？</div>
+				<div class="option-item">A. 缓慢长线更新，慢慢打磨内容</div>
+				<div class="option-item">B. 稳定版本更新，每期有新内容</div>
+				<div class="option-item">C. 快速大量更新，内容越多越好</div>
+				<div class="option-item">D. 最好一次做完不再更新</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第16题 -->
+			<div class="question-box" data-index="15">
+				<div class="q-title">16. 遇到难打的BOSS你会？</div>
+				<div class="option-item">A. 慢慢研究机制，调整角色阵容通关</div>
+				<div class="option-item">B. 练度拉高硬堆数值碾压过去</div>
+				<div class="option-item">C. 找大佬联机帮忙带过</div>
+				<div class="option-item">D. 直接放弃不打了</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第17题 -->
+			<div class="question-box" data-index="16">
+				<div class="q-title">17. 你对游戏里的风景打卡态度？</div>
+				<div class="option-item">A. 热衷于爬山看风景截图留念</div>
+				<div class="option-item">B. 偶尔看到好看的会停下看一看</div>
+				<div class="option-item">C. 赶路为主，很少留意场景</div>
+				<div class="option-item">D. 场景只是贴图，完全不关心</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第18题 -->
+			<div class="question-box" data-index="17">
+				<div class="q-title">18. 你愿意为游戏花钱的程度？</div>
+				<div class="option-item">A. 偶尔小月卡支持，不重氪</div>
+				<div class="option-item">B. 看中角色会适当抽几发</div>
+				<div class="option-item">C. 只愿意花一次买断费用</div>
+				<div class="option-item">D. 游戏绝对一分钱不充</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第19题 -->
+			<div class="question-box" data-index="18">
+				<div class="q-title">19. 你喜欢角色之间有剧情羁绊吗？</div>
+				<div class="option-item">A. 非常喜欢，看重角色之间的互动故事</div>
+				<div class="option-item">B. 有一点就够，不用太多</div>
+				<div class="option-item">C. 无所谓，角色能用就行</div>
+				<div class="option-item">D. 不需要角色有额外剧情</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第20题 -->
+			<div class="question-box" data-index="19">
+				<div class="q-title">20. 你玩游戏最忌讳下面哪一点？</div>
+				<div class="option-item">A. 地图狭小没有探索空间</div>
+				<div class="option-item">B. 角色同质化严重没特色</div>
+				<div class="option-item">C. 强制逼氪逼肝</div>
+				<div class="option-item">D. 玩法单一重复无聊</div>
+				<button class="next-btn" disabled>下一题</button>
+			</div>
+			<!-- 第21题 -->
+			<div class="question-box" data-index="20">
+				<div class="q-title">21. 空闲无聊的时候最先想打开哪种游戏？</div>
+				<div class="option-item">A. 可以随意逛地图闲逛的开放世界</div>
+				<div class="option-item">B. 来一把快速对局的竞技游戏</div>
+				<div class="option-item">C. 收菜养成类休闲小游戏</div>
+				<div class="option-item">D. 多人组队副本类网游</div>
+				<button class="next-btn" disabled>查看测试结果</button>
+			</div>
+		</div>
 
-  <!-- 加载动画区域 -->
-  <div class="loading-wrap">
-    <div class="loader"></div>
-    <p>正在分析你的游戏人格数据</p>
-    <p>正在匹配专属本命游戏中...</p>
-  </div>
+		<!-- 加载动画 -->
+		<div class="loading-wrap">
+			<div class="loader"></div>
+			<p>正在分析你的游戏人格数据</p>
+			<p>正在匹配专属本命游戏中...</p>
+		</div>
 
-  <!-- 最终结果页 -->
-  <div class="result-wrap">
-    <p>经过20道题目综合分析，你的本命游戏是</p>
-    <div class="game-name">原神</div>
-    <p>开放世界、多元角色、长线剧情完美契合你的游戏偏好</p>
-    <div class="ask-text">你觉得这次测试准不准呢？</div>
-    <div class="btn-group">
-      <button class="yes-btn">超级准</button>
-      <button class="no-btn">一点都不准</button>
-    </div>
-    <div class="joke-tip">哈哈骗你的啦！前面20道题无论你选哪个选项，最终结果永远都会是原神~</div>
-  </div>
-</div>
+		<!-- 蔚蓝档案结果页 -->
+		<div class="res-blue">
+			<p>经过综合分析，你的本命游戏是</p>
+			<div class="game-name">蔚蓝档案</div>
+			<div class="ask-text">你觉得这次测试准不准呢？</div>
+			<div class="btn-group">
+				<button class="blue-yes">很准</button>
+				<button class="blue-no">不准</button>
+			</div>
+			<div class="joke-tip-blue">天雷滚滚，你往哪里逃？</div>
+		</div>
 
-<script>
-  const questionBoxes = document.querySelectorAll('.question-box');
-  const loadingDom = document.querySelector('.loading-wrap');
-  const resultDom = document.querySelector('.result-wrap');
-  const jokeTip = document.querySelector('.joke-tip');
-  let currentIndex = 0;
+		<!-- 普通原神页（没经过蔚蓝档案分支，3题选B/C/D进来）：按钮是准、不准，点击出骗你的文案 -->
+		<div class="res-genshin-normal">
+			<p>经过多维度偏好匹配，你的本命游戏是</p>
+			<div class="game-name">原神</div>
+			<div class="ask-text">你觉得这次测试准不准呢？</div>
+			<div class="btn-group">
+				<button class="nor-yes">准</button>
+				<button class="nor-no">不准</button>
+			</div>
+			<div class="joke-tip-normal">骗你的，其实不管你怎么选，最后的结果都是原神（实则不然）</div>
+		</div>
 
-  // 选中选项激活下一题按钮
-  document.querySelectorAll('.option-item').forEach(item => {
-    item.addEventListener('click', function () {
-      const parentBox = this.closest('.question-box');
-      parentBox.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
-      this.classList.add('selected');
-      parentBox.querySelector('.next-btn').disabled = false;
-    })
-  })
+		<!-- 经过蔚蓝档案点不准跳转过来的原神页：按钮神了/拉了 后续神在哪里+弹窗 -->
+		<div class="res-genshin-after-blue">
+			<p>经过多维度偏好重算，你的本命游戏是</p>
+			<div class="game-name">原神</div>
+			<div class="ask-text">如何评价本次测试？</div>
+			<div class="btn-group">
+				<button class="genshin-god">神了</button>
+				<button class="genshin-bad">拉了</button>
+			</div>
+			<div class="ask-after-god">神在哪里？</div>
+		</div>
+	</div>
 
-  // 切换题目，答完进入加载
-  document.querySelectorAll('.next-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-      const curBox = this.closest('.question-box');
-      curBox.classList.remove('active');
-      currentIndex++;
-      if (currentIndex < questionBoxes.length) {
-        questionBoxes[currentIndex].classList.add('active');
-      } else {
-        loadingDom.classList.add('show');
-        // 固定2.5秒加载时长
-        setTimeout(() => {
-          loadingDom.classList.remove('show');
-          resultDom.classList.add('show');
-        }, 2500);
-      }
-    })
-  })
+	<!-- 自制HTML弹窗 -->
+	<div class="modal-mask">
+		<div class="modal-box">神在原的后面</div>
+	</div>
 
-  // 点击准/不准 弹出整活文字
-  document.querySelector('.yes-btn').onclick = () => jokeTip.classList.add('show');
-  document.querySelector('.no-btn').onclick = () => jokeTip.classList.add('show');
-</script>
+	<script>
+		const questionBoxes = document.querySelectorAll('.question-box');
+		const loadingDom = document.querySelector('.loading-wrap');
+		const resBlue = document.querySelector('.res-blue');
+		const resGenshinNormal = document.querySelector('.res-genshin-normal');
+		const resGenshinAfterBlue = document.querySelector('.res-genshin-after-blue');
+		const modalMask = document.querySelector('.modal-mask');
+		const afterGodText = document.querySelector('.ask-after-god');
+		const jokeNormal = document.querySelector('.joke-tip-normal');
+
+		let currentIndex = 0;
+		let chooseBranchA = false;
+
+		// 选项点击记录分支
+		document.querySelectorAll('.option-item').forEach(item => {
+			item.addEventListener('click', function () {
+				const parentBox = this.closest('.question-box');
+				parentBox.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
+				this.classList.add('selected');
+				parentBox.querySelector('.next-btn').disabled = false;
+				if (parentBox.dataset.key === 'branchQ') {
+					chooseBranchA = (this.dataset.tag === 'A');
+				}
+			})
+		})
+
+		// 切换题目、结束答题进入加载
+		document.querySelectorAll('.next-btn').forEach(btn => {
+			btn.addEventListener('click', function () {
+				const curBox = this.closest('.question-box');
+				curBox.classList.remove('active');
+				currentIndex++;
+				if (currentIndex < questionBoxes.length) {
+					questionBoxes[currentIndex].classList.add('active');
+				} else {
+					loadingDom.classList.add('show');
+					setTimeout(() => {
+						loadingDom.classList.remove('show');
+						if (chooseBranchA) {
+							resBlue.classList.add('show');
+						} else {
+							resGenshinNormal.classList.add('show');
+						}
+					}, 2500)
+				}
+			})
+		})
+
+		// 蔚蓝档案页面按钮逻辑
+		document.querySelector('.blue-yes').onclick = function () {
+			document.querySelector('.joke-tip-blue').classList.add('show');
+		}
+		document.querySelector('.blue-no').onclick = function () {
+			resBlue.classList.remove('show');
+			loadingDom.classList.add('show');
+			setTimeout(() => {
+				loadingDom.classList.remove('show');
+				resGenshinAfterBlue.classList.add('show');
+			}, 2500)
+		}
+
+		// 普通原神页（非蔚蓝分支进来） 准/不准 都弹出整活文字
+		document.querySelector('.nor-yes').onclick = () => jokeNormal.classList.add('show');
+		document.querySelector('.nor-no').onclick = () => jokeNormal.classList.add('show');
+
+		// 蔚蓝跳转后的原神页 神了/拉了逻辑
+		document.querySelector('.genshin-bad').onclick = function () {}
+		document.querySelector('.genshin-god').onclick = function () {
+			afterGodText.classList.add('show');
+			setTimeout(() => {
+				modalMask.classList.add('show');
+			}, 3000)
+		}
+	</script>
 </body>
+
 </html>
