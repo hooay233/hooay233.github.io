@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>旋转乒乓 · 多模式对战</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --field: #16213e;
+            --line: #e2e2e2;
+            --player: #4cc9f0;
+            --ai: #f72585;
+            --ball: #ffffff;
+            --net: #ffd166;
+            --text: #e0e0e0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a14; display: flex; justify-content: center; align-items: center;
+            height: 100vh; height: 100dvh; width: 100vw; width: 100dvw; overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        .game-wrapper {
+            position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px;
+            max-width: 100vw; max-height: 100vh; max-height: 100dvh; padding: 10px;
+        }
+        .scoreboard {
+            display: flex; align-items: center; gap: 30px; color: var(--text);
+            font-size: clamp(1rem, 3vw, 1.4rem); font-weight: 700; letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3); z-index: 10;
+        }
+        .score-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .score-label { font-size: 0.65em; letter-spacing: 3px; opacity: 0.8; text-transform: uppercase; }
+        .score-value { font-size: 2.2em; font-weight: 900; line-height: 1; transition: transform 0.15s ease; }
+        .score-value.pop { transform: scale(1.5); animation: popAnim 0.3s ease-out; }
+        @keyframes popAnim { 0% { transform: scale(1.6); } 100% { transform: scale(1); } }
+        .player-color { color: #4cc9f0; } .ai-color { color: #f72585; }
+        .vs-text { font-size: 0.9em; opacity: 0.5; letter-spacing: 4px; }
+        .mode-selector {
+            display: flex; gap: 12px; z-index: 15; background: rgba(0,0,0,0.3); padding: 6px 12px;
+            border-radius: 30px; backdrop-filter: blur(5px);
+        }
+        .mode-btn {
+            background: transparent; border: 1.5px solid rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.7); padding: 6px 16px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; cursor: pointer;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .mode-btn.active {
+            background: rgba(255,255,255,0.15); border-color: #ffd166; color: #ffd166;
+            box-shadow: 0 0 12px rgba(255,209,102,0.3);
+        }
+        .mode-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.08); }
+        .canvas-container {
+            position: relative; border-radius: 16px; overflow: hidden;
+            box-shadow: var(--shadow), 0 0 60px rgba(76,201,240,0.1), 0 0 60px rgba(247,37,133,0.08);
+            border: 2px solid rgba(255,255,255,0.15); background: #0d1117;
+            max-width: 100vw; max-height: 65vh; max-height: 65dvh; aspect-ratio: 16 / 10; cursor: none;
+        }
+        .canvas-container.active { border-color: rgba(255,255,255,0.4); }
+        canvas { display: block; width: 100%; height: 100%; cursor: none; }
+        .controls-hint {
+            color: rgba(255,255,255,0.5); font-size: 0.75rem; letter-spacing: 1px;
+            text-align: center; line-height: 1.5; pointer-events: none; z-index: 10;
+        }
+        .controls-hint span { color: rgba(255,255,255,0.75); font-weight: 600; }
+        .key-icon {
+            display: inline-block; background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 2px 6px;
+            font-size: 0.7rem; margin: 0 2px; letter-spacing: 0; font-weight: 700; min-width: 18px; text-align: center;
+        }
+        .spin-indicator {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.55); font-size: 0.7rem; letter-spacing: 1px;
+            pointer-events: none; z-index: 5; transition: opacity 0.3s;
+        }
+        @media (max-width: 600px) {
+            .canvas-container { border-radius: 10px; max-height: 50vh; max-height: 50dvh; aspect-ratio: 16 / 11; }
+            .scoreboard { gap: 15px; font-size: 0.9rem; }
+            .score-value { font-size: 1.6em; }
+            .controls-hint { font-size: 0.65rem; }
+            .spin-indicator { font-size: 0.6rem; bottom: 8px; }
+            .mode-btn { padding: 4px 12px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-wrapper">
+    <div class="scoreboard">
+        <div class="score-item">
+            <span class="score-label player-color" id="leftLabel">🎯 玩家</span>
+            <span class="score-value player-color" id="scorePlayer">0</span>
+        </div>
+        <span class="vs-text">VS</span>
+        <div class="score-item">
+            <span class="score-label ai-color" id="rightLabel">🤖 AI</span>
+            <span class="score-value ai-color" id="scoreAI">0</span>
+        </div>
+    </div>
+    <div class="mode-selector" id="modeSelector">
+        <button class="mode-btn active" data-mode="pva">🧑  vs  🤖</button>
+        <button class="mode-btn" data-mode="pvp">🧑  vs  🧑</button>
+        <button class="mode-btn" data-mode="ava">🤖  vs  🤖</button>
+    </div>
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div class="spin-indicator" id="spinIndicator">旋转: 0 rpm</div>
+    </div>
+    <div class="controls-hint" id="controlsHint">
+        <span class="key-icon">WASD</span> 左拍 <span class="key-icon">Shift</span>加速 &nbsp;|&nbsp;
+        <span class="key-icon">↑↓←→</span> 右拍 <span class="key-icon">Enter</span>加速
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==================== DOM 元素 ====================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const scorePlayerEl = document.getElementById('scorePlayer');
+        const scoreAIEl = document.getElementById('scoreAI');
+        const spinIndicator = document.getElementById('spinIndicator');
+        const leftLabel = document.getElementById('leftLabel');
+        const rightLabel = document.getElementById('rightLabel');
+        const controlsHint = document.getElementById('controlsHint');
+
+        // ==================== 世界常量 ====================
+        const WORLD_WIDTH = 800;
+        const WORLD_HEIGHT = 500;
+        const NET_X = WORLD_WIDTH / 2;
+        const PADDLE_RADIUS = 32;
+        const BALL_RADIUS = 11;
+        const NET_THICKNESS = 4;
+
+        const PLAYER_X_MIN = PADDLE_RADIUS;
+        const PLAYER_X_MAX = NET_X - PADDLE_RADIUS - NET_THICKNESS / 2;
+        const AI_X_MIN = NET_X + PADDLE_RADIUS + NET_THICKNESS / 2;
+        const AI_X_MAX = WORLD_WIDTH - PADDLE_RADIUS;
+        const PADDLE_Y_MIN = PADDLE_RADIUS;
+        const PADDLE_Y_MAX = WORLD_HEIGHT - PADDLE_RADIUS;
+
+        // ==================== 物理参数 ====================
+        const AIR_RESISTANCE = 0.998;
+        const ANGULAR_AIR_RESISTANCE = 0.995;
+        const MAGNUS_COEFFICIENT = 0.005;
+        const RESTITUTION = 0.78;
+        const FRICTION_COEFFICIENT = 0.45;
+        const PADDLE_MAX_SPEED = 1234;
+        const PADDLE_ACCELERATION = 2800;
+        const PADDLE_ACCEL_SHIFT = 5200;
+        const PADDLE_FRICTION = 0.88;
+
+        const BALL_STOP_SPEED = 4.5;
+        const BALL_STOP_COOLDOWN = 0.55;
+
+        // ==================== 游戏模式 ====================
+        let gameMode = 'pva';
+        let leftIsAI = false;
+        let rightIsAI = true;
+
+        // ==================== 游戏状态 ====================
+        let scorePlayer = 0, scoreAI = 0, gameTime = 0;
+        let lastFrameTime = performance.now(), deltaTime = 1/60;
+
+        // ==================== 输入状态 ====================
+        const keys = {};
+        let mouseActive = false, touchActive = false;
+        let shiftDown = false, enterDown = false;
+
+        let leftPointerActive = false, rightPointerActive = false;
+        let leftPointerStart = {x:0,y:0}, rightPointerStart = {x:0,y:0};
+        let leftPaddleStart = {x:0,y:0}, rightPaddleStart = {x:0,y:0};
+        let currentLeftPointer = {x:0,y:0}, currentRightPointer = {x:0,y:0};
+        const activeTouches = new Map();
+
+        // ==================== 球拍状态 ====================
+        let playerPaddle = {
+            x: WORLD_WIDTH*0.25, y: WORLD_HEIGHT/2, vx:0, vy:0,
+            radius: PADDLE_RADIUS, color:'#4cc9f0', glowColor:'rgba(76,201,240,0.6)', trailPositions:[],
+        };
+        let aiPaddle = {
+            x: WORLD_WIDTH*0.75, y: WORLD_HEIGHT/2, vx:0, vy:0,
+            radius: PADDLE_RADIUS, color:'#f72585', glowColor:'rgba(247,37,133,0.6)', trailPositions:[],
+            predictionError:0,
+        };
+
+        // ==================== 球的状态 ====================
+        let ball = {
+            x: WORLD_WIDTH/2, y: WORLD_HEIGHT/2, vx:0, vy:0,
+            angularVelocity:0, radius:BALL_RADIUS, trailPositions:[], maxTrailLength:18, lastBounceTime:0,
+        };
+        let particles = [];
+
+        function spawnParticles(x,y,count,color,intensity=1) {
+            for(let i=0;i<count;i++) {
+                const angle = Math.random()*Math.PI*2;
+                const speed = (80+Math.random()*280)*intensity;
+                particles.push({x,y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+                    life:0.5+Math.random()*0.8, maxLife:0.5+Math.random()*0.8, color, size:1.5+Math.random()*3.5});
+            }
+            if(particles.length>300) particles.splice(0,particles.length-300);
+        }
+        function clamp(v,min,max) { return Math.max(min,Math.min(max,v)); }
+        function lerp(a,b,t) { return a+(b-a)*t; }
+
+        function resetBall(dir=1) {
+            ball.x = WORLD_WIDTH/2; ball.y = WORLD_HEIGHT/2;
+            const ang = (dir>0?0:Math.PI) + (Math.random()-0.5)*Math.PI/5;
+            const spd = 250+Math.random()*180;
+            ball.vx = Math.cos(ang)*spd; ball.vy = Math.sin(ang)*spd;
+            ball.angularVelocity = (Math.random()-0.5)*20;
+            ball.trailPositions = []; ball.lastBounceTime = gameTime;
+        }
+        function resetGame() {
+            scorePlayer=0; scoreAI=0; updateScoreDisplay();
+            playerPaddle.x=WORLD_WIDTH*0.25; playerPaddle.y=WORLD_HEIGHT/2; playerPaddle.vx=0; playerPaddle.vy=0; playerPaddle.trailPositions=[];
+            aiPaddle.x=WORLD_WIDTH*0.75; aiPaddle.y=WORLD_HEIGHT/2; aiPaddle.vx=0; aiPaddle.vy=0; aiPaddle.trailPositions=[];
+            aiPaddle.predictionError=0;
+            resetBall(Math.random()>0.5?1:-1); particles=[]; gameTime=0;
+        }
+        function updateScoreDisplay() {
+            scorePlayerEl.textContent = scorePlayer; scoreAIEl.textContent = scoreAI;
+            scorePlayerEl.classList.add('pop'); scoreAIEl.classList.add('pop');
+            setTimeout(()=>{scorePlayerEl.classList.remove('pop'); scoreAIEl.classList.remove('pop');},300);
+        }
+        function playerScored() { scorePlayer++; updateScoreDisplay(); spawnParticles(ball.x,ball.y,40,'#4cc9f0',1.5); resetBall(-1); }
+        function aiScored() { scoreAI++; updateScoreDisplay(); spawnParticles(ball.x,ball.y,40,'#f72585',1.5); resetBall(1); }
+
+        // ==================== 碰撞处理 ====================
+        function handleBallPaddleCollision(paddle) {
+            const dx=ball.x-paddle.x, dy=ball.y-paddle.y;
+            const dist=Math.sqrt(dx*dx+dy*dy);
+            const minDist=ball.radius+paddle.radius;
+            if(dist<minDist && dist>0.001) {
+                const nx=dx/dist, ny=dy/dist;
+                ball.x+=nx*(minDist-dist); ball.y+=ny*(minDist-dist);
+                const rvx=ball.vx-paddle.vx, rvy=ball.vy-paddle.vy;
+                const rvn=rvx*nx+rvy*ny; if(rvn>0) return;
+                const tx=-ny, ty=nx;
+                const rvt = rvx * tx + rvy * ty;          // 球心相对球拍的切向速度
+                const newRvn = -RESTITUTION * rvn;
+                const ni = (1 + RESTITUTION) * Math.abs(rvn);
+                
+                // ★ 接触点总滑动速度 = 球心切向速度 + 表面线速度
+                const surfaceSpeed = -ball.angularVelocity * ball.radius;
+                const slip = rvt + surfaceSpeed;
+                
+                // 摩擦力冲量方向与总滑动方向相反
+                let fi = -slip * FRICTION_COEFFICIENT;
+                fi = clamp(fi, -ni * FRICTION_COEFFICIENT, ni * FRICTION_COEFFICIENT);
+                
+                const newRvt = rvt + fi;
+                
+                ball.vx = paddle.vx + newRvn * nx + newRvt * tx;
+                ball.vy = paddle.vy + newRvn * ny + newRvt * ty;
+                
+                // 物理正确的角速度变化（假设薄球壳，转动惯量 I = 2/3·m·R², m=1）
+                ball.angularVelocity -= 0.8 * fi / ball.radius;
+                // 保留球拍“搓球”的额外旋转
+                ball.angularVelocity += (paddle.vx * tx + paddle.vy * ty) * 0.025;
+                ball.angularVelocity = clamp(ball.angularVelocity, -55, 55);
+                spawnParticles(ball.x-nx*ball.radius,ball.y-ny*ball.radius,Math.min(Math.floor(Math.abs(rvn)/8),35),paddle.color,Math.abs(rvn)/300);
+                ball.lastBounceTime=gameTime;
+            }
+        }
+        function handleBallWallCollision() {
+            // 定义墙的法向量和切向量function handleBallWallCollision() {
+            // ---- 上墙碰撞 ----
+            if (ball.y - ball.radius < 0) {
+                ball.y = ball.radius;                     // 分离出墙体
+                const vy_old = ball.vy;
+                // 法向反弹（保证一定弹回场内）
+                ball.vy = Math.abs(ball.vy) * RESTITUTION;
+                // 法向冲量近似（用于限制摩擦力）
+                const rvn = Math.abs(vy_old);             // 墙静止，入射法向速度（正值）
+                const ni = (1 + RESTITUTION) * rvn;
+        
+                // ★ 接触点总滑动速度（切向）
+                // 上墙接触点在球顶部，线速度方向 = +ωR（右为正）
+                const surfaceSpeed = -ball.angularVelocity * ball.radius;
+                const rvt = ball.vx;                      // 球心切向速度
+                const slip = rvt + surfaceSpeed;
+        
+                let fi = -slip * FRICTION_COEFFICIENT*0.4;
+                fi = clamp(fi, -ni * FRICTION_COEFFICIENT*0.4, ni * FRICTION_COEFFICIENT*0.4);
+                ball.vx = rvt + fi;
+        
+                // 角速度更新（薄球壳转动惯量）
+                ball.angularVelocity += 0.8 * fi / ball.radius;
+                ball.angularVelocity = clamp(ball.angularVelocity, -55, 55);
+        
+                spawnParticles(ball.x, ball.y, 8, '#ffffff', 0.6);
+                ball.lastBounceTime = gameTime;
+            }
+        
+            // ---- 下墙碰撞 ----
+            else if (ball.y + ball.radius > WORLD_HEIGHT) {
+                ball.y = WORLD_HEIGHT - ball.radius;
+                const vy_old = ball.vy;
+                ball.vy = -Math.abs(ball.vy) * RESTITUTION;
+                const rvn = Math.abs(vy_old);
+                const ni = (1 + RESTITUTION) * rvn;
+        
+                // 下墙接触点在球底部，线速度方向 = -ωR（左为正？右为正的话是负）
+                const surfaceSpeed = ball.angularVelocity * ball.radius;
+                const rvt = ball.vx;
+                const slip = rvt + surfaceSpeed;
+        
+                let fi = -slip * FRICTION_COEFFICIENT*0.4;
+                fi = clamp(fi, -ni * FRICTION_COEFFICIENT*0.4, ni * FRICTION_COEFFICIENT*0.4);
+                ball.vx = rvt + fi;
+        
+                ball.angularVelocity -= 0.8 * fi / ball.radius;
+                ball.angularVelocity = clamp(ball.angularVelocity, -55, 55);
+        
+                spawnParticles(ball.x, ball.y, 8, '#ffffff', 0.6);
+                ball.lastBounceTime = gameTime;
+            }
+        }
+        function handlePaddleBoundary(paddle,isLeft) {
+            paddle.x=clamp(paddle.x, isLeft?PLAYER_X_MIN:AI_X_MIN, isLeft?PLAYER_X_MAX:AI_X_MAX);
+            paddle.y=clamp(paddle.y, PADDLE_Y_MIN, PADDLE_Y_MAX);
+        }
+
+        // ==================== AI 逻辑 ====================
+        function updateAIPaddle(paddle, isLeft, dt) {
+            const contactDist = PADDLE_RADIUS + BALL_RADIUS;
+            const sideSign = isLeft ? -1 : 1;
+            const boundaryMin = isLeft ? PLAYER_X_MIN : AI_X_MIN;
+            const boundaryMax = isLeft ? PLAYER_X_MAX : AI_X_MAX;
+            let targetX, targetY;
+
+            const ballMovingTowards = isLeft ? ball.vx < -20 : ball.vx > 20;
+            const ballInSide = isLeft ? ball.x < NET_X : ball.x > NET_X;
+
+            if (ballInSide || (ballMovingTowards && (isLeft ? ball.x < NET_X+60 : ball.x > NET_X-60))) {
+                targetX = clamp(ball.x + sideSign * contactDist * 0.85, boundaryMin, boundaryMax);
+                targetY = clamp(ball.y, PADDLE_Y_MIN, PADDLE_Y_MAX);
+                const paddleOutside = isLeft ? (paddle.x < ball.x - 2) : (paddle.x > ball.x + 2);
+                if (paddleOutside) {
+                    const distToBall = Math.hypot(paddle.x - ball.x, paddle.y - ball.y);
+                    if (distToBall < contactDist + 25) {
+                        paddle.vx += -sideSign * 2100 * dt;
+                    }
+                }
+            } else {
+                targetX = clamp(ball.x + sideSign * 280, boundaryMin, boundaryMax);
+                targetY = clamp((WORLD_HEIGHT/2 + ball.y)/2, PADDLE_Y_MIN, PADDLE_Y_MAX);
+            }
+
+            paddle.predictionError = lerp(paddle.predictionError||0, (Math.random()-0.5)*30, dt*2.5);
+            targetY += paddle.predictionError;
+            targetY = clamp(targetY, PADDLE_Y_MIN, PADDLE_Y_MAX);
+            targetX = clamp(targetX, boundaryMin, boundaryMax);
+
+            const springK = 250, dampingK = 9;
+            paddle.vx += (targetX - paddle.x) * springK * dt - paddle.vx * dampingK * dt;
+            paddle.vy += (targetY - paddle.y) * springK * dt - paddle.vy * dampingK * dt;
+            const spd = Math.hypot(paddle.vx, paddle.vy);
+            if (spd > PADDLE_MAX_SPEED) { const s = (PADDLE_MAX_SPEED)/spd; paddle.vx*=s; paddle.vy*=s; }
+            paddle.x += paddle.vx * dt; paddle.y += paddle.vy * dt;
+            handlePaddleBoundary(paddle, isLeft);
+        }
+
+        // ==================== 玩家移动 ====================
+        function updatePlayerPaddle(paddle, isLeft, dt) {
+            const prevX = paddle.x, prevY = paddle.y;
+            const boundaryMin = isLeft ? PLAYER_X_MIN : AI_X_MIN;
+            const boundaryMax = isLeft ? PLAYER_X_MAX : AI_X_MAX;
+            const pointerActive = isLeft ? leftPointerActive : rightPointerActive;
+            const pointerStart = isLeft ? leftPointerStart : rightPointerStart;
+            const paddleStart = isLeft ? leftPaddleStart : rightPaddleStart;
+            const currentPointer = isLeft ? currentLeftPointer : currentRightPointer;
+
+            if (pointerActive) {
+                let tx = paddleStart.x + (currentPointer.x - pointerStart.x);
+                let ty = paddleStart.y + (currentPointer.y - pointerStart.y);
+                tx = clamp(tx, boundaryMin, boundaryMax);
+                ty = clamp(ty, PADDLE_Y_MIN, PADDLE_Y_MAX);
+                const lf = (isLeft ? shiftDown : enterDown) ? 0.92 : 0.82;
+                paddle.x = lerp(paddle.x, tx, lf);
+                paddle.y = lerp(paddle.y, ty, lf);
+                paddle.vx = (paddle.x - prevX) / dt;
+                paddle.vy = (paddle.y - prevY) / dt;
+                const spd = Math.hypot(paddle.vx, paddle.vy);
+                if (spd > PADDLE_MAX_SPEED) { const s = (PADDLE_MAX_SPEED)/spd; paddle.vx*=s; paddle.vy*=s; }
+            } else {
+                let ax=0, ay=0;
+                const accel = (isLeft ? shiftDown : enterDown) ? PADDLE_ACCEL_SHIFT : PADDLE_ACCELERATION;
+                if (isLeft) {
+                    if (keys['KeyW']) ay -= accel;
+                    if (keys['KeyS']) ay += accel;
+                    if (keys['KeyA']) ax -= accel;
+                    if (keys['KeyD']) ax += accel;
+                } else {
+                    if (keys['ArrowUp']) ay -= accel;
+                    if (keys['ArrowDown']) ay += accel;
+                    if (keys['ArrowLeft']) ax -= accel;
+                    if (keys['ArrowRight']) ax += accel;
+                }
+                paddle.vx += ax * dt;
+                paddle.vy += ay * dt;
+                paddle.vx *= Math.pow(PADDLE_FRICTION, dt*60);
+                paddle.vy *= Math.pow(PADDLE_FRICTION, dt*60);
+                const spd = Math.hypot(paddle.vx, paddle.vy);
+                if (spd > PADDLE_MAX_SPEED) { const s = PADDLE_MAX_SPEED/spd; paddle.vx*=s; paddle.vy*=s; }
+                paddle.x += paddle.vx * dt;
+                paddle.y += paddle.vy * dt;
+            }
+            handlePaddleBoundary(paddle, isLeft);
+        }
+
+        // ==================== 物理更新 ====================
+        function updatePhysics(dt) {
+            const edt = Math.min(dt, 0.05);
+            if (leftIsAI) updateAIPaddle(playerPaddle, true, edt); else updatePlayerPaddle(playerPaddle, true, edt);
+            playerPaddle.trailPositions.push({x:playerPaddle.x, y:playerPaddle.y, age:0});
+            if (playerPaddle.trailPositions.length>8) playerPaddle.trailPositions.shift();
+
+            if (rightIsAI) updateAIPaddle(aiPaddle, false, edt); else updatePlayerPaddle(aiPaddle, false, edt);
+            aiPaddle.trailPositions.push({x:aiPaddle.x, y:aiPaddle.y, age:0});
+            if (aiPaddle.trailPositions.length>8) aiPaddle.trailPositions.shift();
+
+            ball.vx += MAGNUS_COEFFICIENT * ball.angularVelocity * ball.vy * edt;
+            ball.vy += -MAGNUS_COEFFICIENT * ball.angularVelocity * ball.vx * edt;
+            ball.vx *= Math.pow(AIR_RESISTANCE, edt*60);
+            ball.vy *= Math.pow(AIR_RESISTANCE, edt*60);
+            ball.angularVelocity *= Math.pow(ANGULAR_AIR_RESISTANCE, edt*60);
+            ball.x += ball.vx * edt; ball.y += ball.vy * edt;
+
+            ball.trailPositions.push({x:ball.x, y:ball.y, age:0, spin:ball.angularVelocity});
+            if (ball.trailPositions.length>ball.maxTrailLength) ball.trailPositions.shift();
+
+            handleBallPaddleCollision(playerPaddle);
+            handleBallPaddleCollision(aiPaddle);
+            handleBallWallCollision();
+
+            const bs = Math.hypot(ball.vx, ball.vy);
+            if (bs < BALL_STOP_SPEED && gameTime - ball.lastBounceTime > BALL_STOP_COOLDOWN) {
+                if (ball.x < NET_X) aiScored(); else playerScored();
+            }
+            if (ball.x - ball.radius < -15) aiScored();
+            if (ball.x + ball.radius > WORLD_WIDTH+15) playerScored();
+            if (ball.x < -100 || ball.x > WORLD_WIDTH+100 || ball.y < -100 || ball.y > WORLD_HEIGHT+100)
+                resetBall(ball.x < WORLD_WIDTH/2 ? 1 : -1);
+
+            for (let i=particles.length-1;i>=0;i--) {
+                const p=particles[i];
+                p.x+=p.vx*edt; p.y+=p.vy*edt; p.life-=edt;
+                if (p.life<=0) particles.splice(i,1);
+            }
+            [playerPaddle, aiPaddle].forEach(p => {
+                p.trailPositions.forEach(t=>t.age+=edt);
+                p.trailPositions = p.trailPositions.filter(t=>t.age<0.35);
+            });
+            ball.trailPositions.forEach(t=>t.age+=edt);
+            ball.trailPositions = ball.trailPositions.filter(t=>t.age<0.55);
+        }
+
+        // ==================== 渲染 ====================
+        function drawField() {
+            ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,WORLD_WIDTH,WORLD_HEIGHT);
+            ctx.strokeStyle='rgba(255,255,255,0.02)'; ctx.lineWidth=0.5;
+            for(let x=25;x<WORLD_WIDTH;x+=25){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD_HEIGHT);ctx.stroke();}
+            for(let y=25;y<WORLD_HEIGHT;y+=25){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD_WIDTH,y);ctx.stroke();}
+            ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=3;ctx.strokeRect(2,2,WORLD_WIDTH-4,WORLD_HEIGHT-4);
+            ctx.strokeStyle='#ffd166';ctx.lineWidth=NET_THICKNESS;ctx.setLineDash([18,12]);
+            ctx.beginPath();ctx.moveTo(NET_X,8);ctx.lineTo(NET_X,WORLD_HEIGHT-8);ctx.stroke();
+            ctx.setLineDash([]);ctx.fillStyle='#ffd166';
+            ctx.fillRect(NET_X-3,6,6,16);ctx.fillRect(NET_X-3,WORLD_HEIGHT-22,6,16);
+            ctx.strokeStyle='rgba(255,209,102,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,16]);
+            ctx.beginPath();ctx.moveTo(NET_X,10);ctx.lineTo(NET_X,WORLD_HEIGHT-10);ctx.stroke();ctx.setLineDash([]);
+            ctx.fillStyle='rgba(255,255,255,0.03)';
+            ctx.fillRect(0,0,NET_X-NET_THICKNESS/2,WORLD_HEIGHT);
+            ctx.fillRect(NET_X+NET_THICKNESS/2,0,WORLD_WIDTH-NET_X-NET_THICKNESS/2,WORLD_HEIGHT);
+        }
+        function drawPaddleTrail(p,alpha=0.35) {
+            if(p.trailPositions.length<2)return;
+            for(let i=1;i<p.trailPositions.length;i++){
+                const t=p.trailPositions[i],r=1-t.age/0.35;
+                ctx.fillStyle=p.glowColor.replace('0.6',String(alpha*r*0.4));
+                ctx.beginPath();ctx.arc(t.x,t.y,p.radius*(0.6+0.4*r),0,Math.PI*2);ctx.fill();
+            }
+        }
+        function drawPaddle(p,label) {
+            const g=ctx.createRadialGradient(p.x,p.y,p.radius*0.6,p.x,p.y,p.radius*2.2);
+            g.addColorStop(0,p.glowColor);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;
+            ctx.beginPath();ctx.arc(p.x,p.y,p.radius*2.2,0,Math.PI*2);ctx.fill();
+            const b=ctx.createRadialGradient(p.x-2,p.y-2,p.radius*0.15,p.x,p.y,p.radius);
+            b.addColorStop(0,'#ffffff');b.addColorStop(0.35,p.color);b.addColorStop(1,'rgba(0,0,0,0.5)');
+            ctx.fillStyle=b;ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);ctx.fill();
+            ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=2.5;ctx.stroke();
+            ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=0.6;
+            const ir=p.radius*0.7;
+            for(let i=-3;i<=3;i++){
+                const o=i*ir/4;
+                ctx.beginPath();ctx.moveTo(p.x-ir,p.y+o);ctx.lineTo(p.x+ir,p.y+o);ctx.stroke();
+                ctx.beginPath();ctx.moveTo(p.x+o,p.y-ir);ctx.lineTo(p.x+o,p.y+ir);ctx.stroke();
+            }
+            ctx.fillStyle='rgba(255,255,255,0.8)';ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 10px "PingFang SC","Microsoft YaHei",sans-serif';ctx.textAlign='center';
+            ctx.fillText(label,p.x,p.y-p.radius-10);
+        }
+        function drawBallTrail() {
+            if(ball.trailPositions.length<2)return;
+            for(let i=1;i<ball.trailPositions.length;i++){
+                const t=ball.trailPositions[i],r=1-t.age/0.55;
+                ctx.fillStyle=`hsla(${clamp(40+t.spin*2,0,80)},90%,60%,${r*0.5})`;
+                ctx.beginPath();ctx.arc(t.x,t.y,ball.radius*(0.3+0.7*r),0,Math.PI*2);ctx.fill();
+            }
+        }
+        function drawBall() {
+            const si=Math.abs(ball.angularVelocity)/55;
+            const g=ctx.createRadialGradient(ball.x,ball.y,ball.radius*0.5,ball.x,ball.y,ball.radius*(1.8+si*2.5));
+            g.addColorStop(0,`hsla(${clamp(45+ball.angularVelocity*1.5,30,70)},100%,70%,${0.5+si*0.4})`);
+            g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;
+            ctx.beginPath();ctx.arc(ball.x,ball.y,ball.radius*(1.8+si*2.5),0,Math.PI*2);ctx.fill();
+            const bg=ctx.createRadialGradient(ball.x-2,ball.y-2,ball.radius*0.1,ball.x,ball.y,ball.radius);
+            bg.addColorStop(0,'#ffffff');bg.addColorStop(0.4,'#f0f0f0');bg.addColorStop(1,'#b0b0b0');
+            ctx.fillStyle=bg;ctx.beginPath();ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI*2);ctx.fill();
+            ctx.save();ctx.translate(ball.x,ball.y);ctx.rotate(ball.angularVelocity*gameTime);
+            ctx.strokeStyle='rgba(30,30,30,0.7)';ctx.lineWidth=1.8;const m=ball.radius*0.75;
+            ctx.beginPath();ctx.moveTo(-m,0);ctx.lineTo(m,0);ctx.moveTo(0,-m);ctx.lineTo(0,m);ctx.stroke();
+            ctx.fillStyle='#e63946';ctx.beginPath();ctx.arc(m/1.4,0,3,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#457b9d';ctx.beginPath();ctx.arc(-m/1.4,0,2.5,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#2a9d8f';ctx.beginPath();ctx.arc(0,m/1.4,2.5,0,Math.PI*2);ctx.fill();
+            ctx.restore();
+            ctx.fillStyle='rgba(255,255,255,0.5)';ctx.beginPath();ctx.arc(ball.x-2,ball.y-2.5,ball.radius*0.35,0,Math.PI*2);ctx.fill();
+        }
+        function drawParticles() {
+            for(const p of particles) {
+                const a=p.life/p.maxLife;
+                ctx.fillStyle = p.color.startsWith('#') ? `rgba(${parseInt(p.color.slice(1,3),16)},${parseInt(p.color.slice(3,5),16)},${parseInt(p.color.slice(5,7),16)},${a})` : p.color.replace(')',`,${a})`).replace('rgb','rgba');
+                ctx.beginPath();ctx.arc(p.x,p.y,p.size*a,0,Math.PI*2);ctx.fill();
+            }
+        }
+        function drawSpinIndicator() {
+            const rpm = Math.round(ball.angularVelocity*60/(2*Math.PI));
+            spinIndicator.textContent=`旋转: ${rpm} rpm`;
+            spinIndicator.style.opacity=0.3+Math.abs(ball.angularVelocity)/55*0.7;
+            spinIndicator.style.color=Math.abs(ball.angularVelocity)>27?'#ffd166':'rgba(255,255,255,0.55)';
+        }
+        function render() {
+            ctx.clearRect(0,0,WORLD_WIDTH,WORLD_HEIGHT);
+            drawField(); drawPaddleTrail(playerPaddle); drawPaddleTrail(aiPaddle);
+            drawBallTrail(); drawParticles();
+            drawPaddle(playerPaddle, leftIsAI?'AI':'玩家');
+            drawPaddle(aiPaddle, rightIsAI?'AI':'玩家');
+            drawBall(); drawSpinIndicator();
+        }
+
+        // ==================== 游戏循环 ====================
+        function gameLoop(ts) {
+            deltaTime=(ts-lastFrameTime)/1000; if(deltaTime<=0)deltaTime=1/60; if(deltaTime>0.1)deltaTime=0.1;
+            lastFrameTime=ts; gameTime+=deltaTime;
+            updatePhysics(deltaTime); render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== 模式切换 ====================
+        function setGameMode(mode) {
+            gameMode=mode;
+            switch(mode){case'pvp':leftIsAI=rightIsAI=false;break;case'pva':leftIsAI=false;rightIsAI=true;break;case'ava':leftIsAI=rightIsAI=true;break;}
+            leftLabel.textContent=leftIsAI?'🤖 AI':'🎯 玩家';
+            rightLabel.textContent=rightIsAI?'🤖 AI':'🎯 玩家';
+            leftLabel.className=`score-label ${leftIsAI?'ai-color':'player-color'}`;
+            rightLabel.className=`score-label ${rightIsAI?'ai-color':'player-color'}`;
+            if(mode==='pvp')controlsHint.innerHTML=`<span class="key-icon">WASD</span> 左拍 <span class="key-icon">Shift</span>加速 &nbsp;|&nbsp; <span class="key-icon">↑↓←→</span> 右拍 <span class="key-icon">Enter</span>加速`;
+            else if(mode==='pva')controlsHint.innerHTML=`<span class="key-icon">WASD/方向键</span> 移动 &nbsp;|&nbsp; <span class="key-icon">Shift/Enter</span> 加速 &nbsp;|&nbsp; 鼠标/触屏拖动`;
+            else controlsHint.innerHTML=`👀 AI 观战模式`;
+            leftPointerActive=rightPointerActive=false; mouseActive=touchActive=false; activeTouches.clear();
+            resetGame();
+        }
+        document.querySelectorAll('.mode-btn').forEach(btn=>btn.addEventListener('click',e=>{
+            document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+            e.target.classList.add('active'); setGameMode(e.target.dataset.mode);
+        }));
+
+        // ==================== 输入处理 ====================
+        function getCanvasPos(cx,cy){
+            const r=canvas.getBoundingClientRect();
+            return{x:(cx-r.left)*(WORLD_WIDTH/r.width),y:(cy-r.top)*(WORLD_HEIGHT/r.height)};
+        }
+        window.addEventListener('keydown',e=>{
+            keys[e.code]=true;
+            if(e.code.startsWith('Shift')){shiftDown=true;e.preventDefault();}
+            if(e.code==='Enter'){enterDown=true;e.preventDefault();}
+            if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+            if(e.code==='KeyR')resetGame();
+        });
+        window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code.startsWith('Shift'))shiftDown=false;if(e.code==='Enter')enterDown=false;});
+        canvas.addEventListener('mousedown',e=>{
+            e.preventDefault();const p=getCanvasPos(e.clientX,e.clientY);mouseActive=true;
+            if(p.x<NET_X&&!leftIsAI){leftPointerActive=true;leftPointerStart={x:p.x,y:p.y};leftPaddleStart={x:playerPaddle.x,y:playerPaddle.y};currentLeftPointer={x:p.x,y:p.y};}
+            else if(p.x>=NET_X&&!rightIsAI){rightPointerActive=true;rightPointerStart={x:p.x,y:p.y};rightPaddleStart={x:aiPaddle.x,y:aiPaddle.y};currentRightPointer={x:p.x,y:p.y};}
+            container.classList.add('active');
+        });
+        window.addEventListener('mousemove',e=>{
+            if(!mouseActive)return;const p=getCanvasPos(e.clientX,e.clientY);
+            if(leftPointerActive){currentLeftPointer.x=p.x;currentLeftPointer.y=p.y;}
+            if(rightPointerActive){currentRightPointer.x=p.x;currentRightPointer.y=p.y;}
+        });
+        window.addEventListener('mouseup',()=>{mouseActive=false;leftPointerActive=rightPointerActive=false;container.classList.remove('active');});
+        canvas.addEventListener('touchstart',e=>{
+            e.preventDefault();
+            for(const t of e.changedTouches){
+                const p=getCanvasPos(t.clientX,t.clientY);
+                if(p.x<NET_X&&!leftIsAI&&!leftPointerActive&&![...activeTouches.values()].some(v=>v.side==='left')){
+                    leftPointerActive=true;leftPointerStart={x:p.x,y:p.y};leftPaddleStart={x:playerPaddle.x,y:playerPaddle.y};currentLeftPointer={x:p.x,y:p.y};
+                    activeTouches.set(t.identifier,{side:'left'});
+                }else if(p.x>=NET_X&&!rightIsAI&&!rightPointerActive&&![...activeTouches.values()].some(v=>v.side==='right')){
+                    rightPointerActive=true;rightPointerStart={x:p.x,y:p.y};rightPaddleStart={x:aiPaddle.x,y:aiPaddle.y};currentRightPointer={x:p.x,y:p.y};
+                    activeTouches.set(t.identifier,{side:'right'});
+                }
+            }
+            container.classList.add('active');
+        },{passive:false});
+        canvas.addEventListener('touchmove',e=>{
+            e.preventDefault();
+            for(const t of e.touches){
+                const p=getCanvasPos(t.clientX,t.clientY);
+                if(activeTouches.has(t.identifier)){
+                    if(activeTouches.get(t.identifier).side==='left'){currentLeftPointer={x:p.x,y:p.y};}
+                    else{currentRightPointer={x:p.x,y:p.y};}
+                }
+            }
+        },{passive:false});
+        canvas.addEventListener('touchend',e=>{
+            e.preventDefault();
+            for(const t of e.changedTouches){
+                if(activeTouches.has(t.identifier)){
+                    if(activeTouches.get(t.identifier).side==='left')leftPointerActive=false;
+                    else rightPointerActive=false;
+                    activeTouches.delete(t.identifier);
+                }
+            }
+            if(activeTouches.size===0)container.classList.remove('active');
+        });
+        canvas.addEventListener('touchcancel',e=>{activeTouches.clear();leftPointerActive=rightPointerActive=false;container.classList.remove('active');});
+        canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+        // ==================== 响应式布局 ====================
+        function resizeCanvas(){
+            const cw=container.clientWidth,ch=container.clientHeight,asp=WORLD_WIDTH/WORLD_HEIGHT;
+            let w,h;if(cw/ch>asp){h=ch;w=h*asp;}else{w=cw;h=w/asp;}
+            canvas.style.width=w+'px';canvas.style.height=h+'px';canvas.width=WORLD_WIDTH;canvas.height=WORLD_HEIGHT;
+        }
+        window.addEventListener('resize',resizeCanvas);
+        canvas.addEventListener('dblclick',e=>{e.preventDefault();resetGame();spawnParticles(WORLD_WIDTH/2,WORLD_HEIGHT/2,60,'#ffd166',1);});
+
+        // ==================== 启动 ====================
+        function init(){resizeCanvas();setGameMode('pva');updateScoreDisplay();lastFrameTime=performance.now();requestAnimationFrame(gameLoop);}
+        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+        console.log('🏓 旋转乒乓完整版已启动！模式切换、多点触控、AI逻辑均已就绪。');
+    })();
+</script>
+</body>
+</html>
