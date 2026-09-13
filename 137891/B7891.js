@@ -28,8 +28,7 @@ function B7891ize(nNormal){
         return B7891o+dec;
     } else if (nNormal.length == 1 || nNormal == 10){
         return B7891a[nNormal]+dec;
-    }
-    else{
+    } else {
         let result = "";
         let rstr = String(nNormal).replace("-", "").split("").reverse().join("");
         for (let i in rstr){
