@@ -1,0 +1,6 @@
+[submodule "rtyc"]
+	path = rtyc
+	url = git@github.com:hooay233/RunTuYuCha-Build.git
+[submodule "whitespaceesolanggen"]
+	path = whitespaceesolanggen
+	url = git@github.com:TranBrian10/WhitespaceGenerator.git
