@@ -6,12 +6,12 @@ const B7891a = [
     "13+7-8-9+1", //4
     "1+3×7-8-9×1", //5
     "1+3×7-8-9+1", //6
-    "1³×7-8+9+1", //7
+    "1³×7+8-9+1", //7
     "1³+7-8+9-1", //8
     "1³+7-8+9×1", //9
     "1³-7+8+9-1"  //10
 ];
-const B7891neg = "1³⁷+8-9-1";
+const B7891neg = "1³⁷+8-9-1"; //-1
 const B7891o = 137891;
 
 function B7891ize(nNormal){
@@ -28,7 +28,7 @@ function B7891ize(nNormal){
         return B7891o+dec;
     } else if (nNormal.length == 1 || nNormal == 10){
         return B7891a[nNormal]+dec;
-    } 
+    }
     else{
         let result = "";
         let rstr = String(nNormal).replace("-", "").split("").reverse().join("");
@@ -44,7 +44,7 @@ function B7891ize(nNormal){
         if (nNormal < 0) {
             return `${result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")}×(${B7891neg})`+dec;
         }
-        return result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")+dec;
+        return (dec?"(":"")+result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")(dec?")":"")+dec;
     }
 }
 
