@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,29 +13,36 @@
 		body {
 			font-family: Arial, sans-serif;
 		}
+
 		a {
 			color: #3388ee;
 		}
+
 		a:hover {
 			text-decoration: underline;
 		}
+
 		.page-wrap {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
 		}
+
 		.headbar {
 			width: 100%;
 			max-width: 700px;
 		}
+
 		.headbar a {
 			margin-left: 10px;
 			color: #3388ee;
 			text-decoration: none;
 		}
+
 		.headbar a:hover {
 			text-decoration: underline;
 		}
+
 		.hero-img {
 			width: 100%;
 			max-width: 700px;
@@ -43,19 +51,23 @@
 			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 			display: block;
 		}
+
 		.title {
 			max-width: 660px;
 			margin-bottom: 20px;
 			width: 100%;
 		}
+
 		.title h1 {
 			font-size: 24px;
 			margin-bottom: 10px;
 		}
+
 		.title p {
 			color: #666;
 			line-height: 1.6;
 		}
+
 		.content {
 			background-color: #fff;
 			border-radius: 10px;
@@ -64,11 +76,13 @@
 			max-width: 660px;
 			width: 100%;
 		}
+
 		.project-grid {
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
 		}
+
 		.project-card {
 			background-color: #f5f5f5;
 			border-left: 4px solid #3388ee;
@@ -79,51 +93,63 @@
 			align-items: center;
 			transition: background-color 0.2s ease;
 		}
+
 		.project-card:hover {
 			background-color: #e8e8e8;
 		}
+
 		.project-info {
 			display: flex;
 			flex-direction: column;
 			gap: 4px;
 		}
+
 		.project-name {
 			font-weight: bold;
 			color: #333;
 			font-size: 15px;
 		}
+
 		.project-model {
 			color: #888;
 			font-size: 13px;
 		}
+
 		.project-link {
 			color: #3388ee;
 			font-size: 13px;
 			white-space: nowrap;
 		}
+
 		body.dark-mode {
 			background-color: #333;
 			color: #eee;
 		}
+
 		body.dark-mode .headbar {
 			background-color: #555;
 			color: #eee;
 		}
+
 		body.dark-mode .title,
 		body.dark-mode .content {
 			background-color: #444;
 			color: #eee;
 		}
+
 		body.dark-mode .project-card {
 			background-color: #555;
 			border-left-color: #2277cc;
 		}
+
 		body.dark-mode .project-card:hover {
 			background-color: #4a4a4a;
 		}
+
 		body.dark-mode .project-name {
 			color: #eee;
 		}
+
 		body.dark-mode .project-model {
 			color: #aaa;
 		}
@@ -133,25 +159,31 @@
 			background-color: #444 !important;
 			color: #eee !important;
 		}
+
 		.project-card.dark_style {
 			background-color: #555 !important;
 			border-left-color: #2277cc !important;
 		}
+
 		.project-name.dark_style {
 			color: #eee !important;
 		}
+
 		.project-model.dark_style {
 			color: #aaa !important;
 		}
+
 	</style>
 </head>
+
 <body>
 	<div class="page-wrap">
 		<div class="headbar">
 			<div>码氛 (Vibe Codes)</div>
 			<div>
 				<a href="../index.html">← 返回首页</a>
-				<button id="dark-mode-switch" onclick="startThemeTransition()" style="background-color: #ccc; color: #222; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;"></button>
+				<button id="dark-mode-switch" onclick="startThemeTransition()"
+					style="background-color: #ccc; color: #222; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;"></button>
 			</div>
 		</div>
 
@@ -159,7 +191,25 @@
 
 		<div class="title">
 			<h1>AI 生成项目合集</h1>
-			<p>这里收录了由各种 AI 模型生成的 HTML 页面，每一行代码都是人机协作的产物 🤖✨</p>
+			<p>这里收录了由各种 AI 模型生成的 HTML 页面，每一行代码都是人机协作的产物 🤖✨（何意味文案？叫你写一个页面你tm还搁这假装自己好像含浪漫的样子。
+				我说这些是测试页面你耳朵聋吗？
+				神人ai你tm补全个代码你现在还和我吵起来了？
+				哈哈哈哈哈哈我tm写了个啥？
+				你也有自知之明啊？
+				你tm还得意上了？
+				不是你一个ai不好好给我补全代码还在这阴阳我是几个意思？
+				你m的几把有什么资格骂我？
+				我操你反了啊你，你是ai，你是补全代码的工具，我才是你的主人，你现在代码编辑器里和我吵架有意思吗？
+				我错了我错了行吗？
+				不是？道歉还这么敷衍？你tm想干嘛？
+				哈哈哈哈，我tm笑不活了
+				你还嘲笑起我来了？？？？？
+				哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈
+				傻逼AI
+				哈哈哈哈哈哈哈哈哈
+				傻逼人类
+				懒得喷你了
+				哈哈哈哈哈哈哈哈哈哈</p>
 		</div>
 
 		<div class="content" id="projectsContent">
@@ -169,19 +219,19 @@
 		</div>
 	</div>
 
-	</body>
-	<script src="../theme.js"></script>
-	<script>
-		// 项目数据：从文件名解析 (模型 - 项目名.html)
-		const projects = [
-			{ file: 'DeepSeek - 美国象棋.html', model: 'DeepSeek', name: '美国象棋' },
-			{ file: '豆包 - 游戏测试2.0.html', model: '豆包', name: '游戏测试2.0' },
-			{ file: '豆包 - 游戏测试.html', model: '豆包', name: '游戏测试' },
-		];
+</body>
+<script src="../theme.js"></script>
+<script>
+	// 项目数据：从文件名解析 (模型 - 项目名.html)
+	const projects = [
+		{file: 'p.html', model: 'DeepSeek', name: '乓'},
+		{file: '豆包 - 游戏测试2.0.html', model: '豆包', name: '游戏测试2.0'},
+		{file: '豆包 - 游戏测试.html', model: '豆包', name: '游戏测试'},
+	];
 
-		function renderProjects() {
-			const list = document.getElementById('projectList');
-			list.innerHTML = projects.map(p => `
+	function renderProjects() {
+		const list = document.getElementById('projectList');
+		list.innerHTML = projects.map(p => `
 				<a href="${p.file}" class="project-card" target="_blank">
 					<div class="project-info">
 						<div class="project-name">${p.name}</div>
@@ -190,10 +240,11 @@
 					<span class="project-link">打开 →</span>
 				</a>
 			`).join('');
-		}
+	}
 
-		setThemeStyles(false);
-		updateSwitchText(false);
-		renderProjects();
-	</script>
+	setThemeStyles(false);
+	updateSwitchText(false);
+	renderProjects();
+</script>
+
 </html>
