@@ -41,9 +41,9 @@ function B7891ize(nNormal){
             return "";
         }
         if (nNormal < 0) {
-            return `${result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")}×(${B7891neg})`+dec;
+            return `(${result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")})×(${B7891neg})`+dec;
         }
-        return (dec?"(":"")+result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")(dec?")":"")+dec;
+        return (dec?"(":"")+result.slice(0, -1).replaceAll(`(${B7891a[1]})×`, "")+(dec?")":"")+dec;
     }
 }
 
