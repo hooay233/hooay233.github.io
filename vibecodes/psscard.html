@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>属性对决 · 卡牌对战</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  background:radial-gradient(1200px 700px at 50% -15%,#25355f 0%,#121729 45%,#05070e 100%);
+  color:#e8eeff;user-select:none;
+}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:rgba(120,150,255,.35);border-radius:3px}
+
+#stage{position:fixed;inset:0;overflow:hidden}
+#scaler{
+  position:absolute;left:50%;top:50%;
+  width:calc(100% / var(--s,1));height:calc(100% / var(--s,1));
+  transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center center;
+}
+
+/* ===== 菜单 ===== */
+#menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#menu h1{font-size:clamp(28px,6vw,52px);margin:0;letter-spacing:.15em;
+  background:linear-gradient(90deg,#7fd7ff,#b18bff,#ff8fc4);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 40px rgba(140,120,255,.35);font-weight:800}
+#menu .sub{color:#8fa0c9;letter-spacing:.35em;font-size:13px;margin-top:-8px}
+.mbtn{width:280px;padding:14px;border-radius:12px;border:1px solid rgba(130,160,255,.35);
+  background:linear-gradient(180deg,rgba(70,100,190,.35),rgba(35,50,100,.5));
+  color:#dfe8ff;font-size:16px;letter-spacing:.1em;cursor:pointer;transition:.18s;font-weight:600;font-family:inherit}
+.mbtn:hover{transform:translateY(-2px);border-color:#8fb4ff;box-shadow:0 8px 26px rgba(80,130,255,.35)}
+.mbtn.ghost{background:rgba(255,255,255,.04);font-size:13.5px;padding:11px}
+
+/* ===== 布局 ===== */
+#game{position:absolute;inset:0;display:flex;flex-direction:column;padding:8px;gap:6px;overflow-y:auto;overflow-x:hidden}
+
+/* 面板纵向两行：上排「名字 + 效果徽章」，下排「血条（占满整行）」 */
+.pinfo{display:flex;flex-direction:column;gap:5px;padding:7px 11px;border-radius:11px;
+  background:linear-gradient(90deg,rgba(40,60,120,.55),rgba(25,35,70,.35));
+  border:1px solid rgba(100,140,255,.2);flex:0 0 auto;
+  transition:box-shadow .25s,border-color .25s}
+.pinfo.active{border-color:#6fa8ff;box-shadow:0 0 18px rgba(80,140,255,.45);
+  background:linear-gradient(90deg,rgba(60,95,190,.6),rgba(30,45,95,.4))}
+.pinfo.me{border-color:rgba(110,240,180,.4)}
+.pinfo.dead{opacity:.55;filter:grayscale(.6)}
+.pinfo .prow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pname{font-weight:700;font-size:13.5px;white-space:nowrap;flex:0 0 auto}
+.pname .tag{font-size:10px;padding:1px 6px;border-radius:6px;background:rgba(120,180,255,.25);margin-left:5px;font-weight:500}
+
+.hpbar{width:100%;height:19px;border-radius:10px;background:rgba(0,0,0,.45);
+  position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.1);flex:0 0 auto}
+.hpfill{height:100%;width:100%;background:linear-gradient(90deg,#2ee08a,#7ef2b0);
+  transition:width .5s cubic-bezier(.3,1.2,.5,1);box-shadow:0 0 14px rgba(50,230,140,.6) inset}
+.hpfill.low{background:linear-gradient(90deg,#ff8a3d,#ffc46b)}
+.hpfill.crit{background:linear-gradient(90deg,#ff3355,#ff7a94)}
+.hptext{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;text-shadow:0 1px 3px #000}
+
+.badges{display:flex;gap:5px;font-size:10.5px;flex-wrap:wrap;flex:1 1 auto;min-width:0}
+.badge{padding:2px 6px;border-radius:7px;background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.14);white-space:nowrap}
+.badge.sh{background:rgba(80,220,255,.22);border-color:#5ce0ff;color:#b7f2ff}
+.badge.bad{background:rgba(255,90,120,.2);border-color:#ff7b96;color:#ffc9d4}
+.badge.good{background:rgba(90,255,180,.18);border-color:#5cf2a6;color:#c6ffe4}
+.badge.act{background:rgba(90,220,255,.26);border-color:#5cd0ff;color:#d7f5ff;font-weight:800}
+
+.turnbar{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  font-size:12.5px;color:#c3d4ff;padding:5px 10px;border-radius:10px;
+  background:linear-gradient(90deg,rgba(30,45,90,.5),rgba(50,75,150,.42),rgba(30,45,90,.5));
+  border:1px solid rgba(110,160,255,.28)}
+.turnbar .tdot{width:8px;height:8px;border-radius:50%;background:#5cd0ff;box-shadow:0 0 10px #5cd0ff;
+  animation:dotPulse 1.2s ease-in-out infinite;flex:0 0 auto}
+@keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
+.turnbar .tname{color:#fff;font-size:14px}
+.turnbar .tslot{color:#93a6cf;font-size:11.5px}
+
+.handzone{display:flex;gap:7px;flex:0 0 auto;overflow-x:auto;overflow-y:visible;
+  padding:14px 8px 8px;justify-content:center;align-items:center;min-height:70px}
+.handzone.opp{min-height:66px;padding:6px 8px}
+
+.board{flex:1;display:flex;align-items:center;justify-content:center;gap:24px;
+  border-radius:14px;position:relative;min-height:126px;
+  background:radial-gradient(600px 200px at 50% 50%,rgba(90,120,255,.13),transparent 70%)}
+.board::before{content:"";position:absolute;inset:0;border-radius:14px;
+  border:1px dashed rgba(120,160,255,.16);pointer-events:none}
+.fieldwrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.fieldlabel{font-size:11px;color:#8fa0c9;letter-spacing:.1em}
+.nofield{width:82px;height:114px;border-radius:10px;border:1px dashed rgba(140,170,255,.25);
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:#6d7ea6}
+.status{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  font-size:12.5px;padding:5px 16px;border-radius:20px;white-space:nowrap;
+  background:rgba(15,25,55,.85);border:1px solid rgba(120,160,255,.3);color:#bfd2ff}
+.status .in{color:#ff8fa6;font-weight:800}
+
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;flex:0 0 auto;padding:0 4px}
+.abtn{padding:9px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));
+  color:#e8eeff;font-size:13px;cursor:pointer;transition:.15s;font-weight:600;white-space:nowrap;font-family:inherit}
+.abtn:hover{background:rgba(255,255,255,.22)}
+.abtn.danger{border-color:rgba(255,90,110,.6);background:linear-gradient(180deg,rgba(255,70,95,.35),rgba(150,20,45,.3))}
+.abtn.go{border-color:rgba(90,230,160,.6);background:linear-gradient(180deg,rgba(50,220,140,.35),rgba(10,120,70,.3))}
+.abtn:disabled{opacity:.35;cursor:not-allowed}
+
+#log{flex:0 0 auto;height:72px;overflow-y:auto;font-size:11.5px;line-height:1.6;
+  padding:6px 12px;border-radius:10px;background:rgba(0,0,0,.35);
+  border:1px solid rgba(100,140,255,.15);color:#9fb0d6;font-family:ui-monospace,Menlo,Consolas,monospace}
+#log div{margin:1px 0}
+#log .hl{color:#ffd479}
+#log .dmg{color:#ff8098}
+#log .heal{color:#7ff0b0}
+#log .sys{color:#7fb4ff}
+#log .fx{color:#c9a4ff}
+
+/* ===== 卡牌 ===== */
+.card{width:82px;height:114px;border-radius:9px;flex:0 0 auto;position:relative;cursor:pointer;
+  background:linear-gradient(165deg,#ffffff,#dde5f7);color:#131a2c;
+  box-shadow:0 6px 16px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.7);
+  transition:transform .16s ease,box-shadow .16s ease,opacity .16s;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:6px 5px;overflow:hidden}
+.card:hover{transform:translateY(-12px) scale(1.04);box-shadow:0 16px 28px rgba(0,0,0,.7)}
+.card.red{color:#c8203f}
+.card.invalid{opacity:.34;filter:grayscale(.85);cursor:not-allowed}
+.card.invalid:hover{transform:none;box-shadow:0 6px 16px rgba(0,0,0,.55)}
+.card.sel{transform:translateY(-14px);box-shadow:0 0 0 3px #ff4d6d,0 12px 26px rgba(255,60,90,.6)}
+.card.copied{outline:2px solid #4b9eff;outline-offset:-2px}
+.card.copied::after{content:"复制";position:absolute;right:0;bottom:0;font-size:8px;
+  background:#3b82f6;color:#fff;padding:0 3px;border-radius:4px 0 4px 0;z-index:3}
+.card .top{width:100%;display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700}
+.card .suit{font-size:15px;line-height:1}
+.card .attrname{font-size:10px;opacity:.85}
+.card .mid{font-size:26px;line-height:1;opacity:.9}
+.card .bot{width:100%;display:flex;justify-content:space-between;font-size:11.5px;font-weight:800}
+.card .atk{color:#c8203f}
+.card .def{color:#1d5fd0}
+.card.has-hint{padding-bottom:18px}
+.card .hint{position:absolute;left:0;right:0;bottom:0;font-size:9.5px;font-weight:900;line-height:1.55;
+  text-align:center;padding:2px 1px;white-space:nowrap;
+  background:linear-gradient(180deg,rgba(255,60,90,.96),rgba(190,20,55,.96));color:#fff}
+.card .hint.safe{background:linear-gradient(180deg,rgba(30,190,120,.96),rgba(10,125,75,.96))}
+
+.card.func{background:linear-gradient(165deg,#4a2f8f,#7a44c9 42%,#2b1c52);color:#f4ecff;
+  border:1px solid rgba(200,170,255,.55);
+  box-shadow:0 6px 20px rgba(130,70,230,.5),inset 0 0 16px rgba(180,130,255,.35);
+  justify-content:center;gap:2px;text-align:center}
+.card.func .fi{font-size:20px;line-height:1}
+.card.func .fn{font-size:11px;font-weight:800;letter-spacing:.03em}
+.card.func .fd{font-size:7.5px;line-height:1.2;opacity:.78;padding:0 2px}
+.card.func.revive{background:linear-gradient(165deg,#8a6a12,#e8c34a 42%,#5c4408);color:#fff8e0;
+  border-color:#ffe9a0;box-shadow:0 6px 22px rgba(240,200,80,.55),inset 0 0 16px rgba(255,230,150,.4)}
+
+.card.back{background:linear-gradient(135deg,#1b2547,#2e3d70 50%,#16203d);
+  border:1px solid rgba(120,150,255,.4);cursor:default;position:relative;width:56px;height:78px}
+.card.back:hover{transform:none}
+.card.back::after{content:"❖";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:rgba(150,190,255,.4);font-size:22px}
+.handzone.opp .card.back{width:48px;height:68px}
+.handzone.opp .card.back::after{font-size:18px}
+
+.card.big{width:104px;height:146px;transform:none;cursor:default}
+.card.big:hover{transform:none;box-shadow:0 6px 16px rgba(0,0,0,.55)}
+.card.big .mid{font-size:34px}
+.card.big .bot{font-size:13px}
+
+/* ===== 动画 ===== */
+@keyframes cardIn{0%{opacity:0;transform:translateY(18px) scale(.86) rotate(-4deg)}
+  60%{opacity:1;transform:translateY(-4px) scale(1.04) rotate(1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@keyframes landed{0%{transform:scale(.45) rotate(-14deg);filter:brightness(2.4)}
+  55%{transform:scale(1.14) rotate(3deg);filter:brightness(1.25)}100%{transform:scale(1) rotate(0);filter:brightness(1)}}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.5)}
+  18%{opacity:1;transform:translate(-50%,-16px) scale(1.25)}
+  40%{transform:translate(-50%,-24px) scale(1)}100%{opacity:0;transform:translate(-50%,-78px) scale(.95)}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}12%{transform:translateX(-11px)}26%{transform:translateX(9px)}
+  42%{transform:translateX(-7px)}58%{transform:translateX(5px)}74%{transform:translateX(-3px)}}
+@keyframes pulseRing{0%{transform:translate(-50%,-50%) scale(.15);opacity:.95}100%{transform:translate(-50%,-50%) scale(2.3);opacity:0}}
+@keyframes fxSpin{0%{transform:translate(-50%,-50%) scale(.2) rotate(0);opacity:0}
+  25%{transform:translate(-50%,-50%) scale(1.25) rotate(200deg);opacity:1}75%{opacity:1}
+  100%{transform:translate(-50%,-50%) scale(.9) rotate(720deg);opacity:0}}
+@keyframes riseP{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}
+  25%{opacity:1;transform:translate(-50%,-60%) scale(1.2)}100%{transform:translate(-50%,-320%) scale(.9);opacity:0}}
+@keyframes slashGo{0%{opacity:0;transform:translateX(-130%) skewX(-18deg)}30%{opacity:.95}100%{opacity:0;transform:translateX(130%) skewX(-18deg)}}
+@keyframes shieldPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}
+  25%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}65%{opacity:.9;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.28)}}
+@keyframes hueSweep{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+@keyframes cardBurst{0%{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--dr)) scale(.55);opacity:0}}
+@keyframes beamGo{0%{opacity:0;transform:scaleX(.2)}25%{opacity:1}100%{opacity:0;transform:scaleX(1)}}
+@keyframes flashRed{0%{box-shadow:0 0 0 0 rgba(255,60,90,0)}30%{box-shadow:0 0 0 3px rgba(255,60,90,.95),0 0 32px rgba(255,50,90,.9)}100%{box-shadow:0 0 0 0 rgba(255,60,90,0)}}
+@keyframes flashHeal{0%{box-shadow:0 0 0 0 rgba(60,255,150,0)}30%{box-shadow:0 0 0 3px rgba(60,255,150,.9),0 0 30px rgba(50,240,140,.85)}100%{box-shadow:0 0 0 0 rgba(60,255,150,0)}}
+@keyframes infoGlowAtk{0%{box-shadow:0 0 0 0 rgba(255,120,60,0)}35%{box-shadow:0 0 0 3px rgba(255,130,60,.9),0 0 34px rgba(255,110,50,.8)}100%{box-shadow:0 0 0 0 rgba(255,120,60,0)}}
+@keyframes infoGlowDef{0%{box-shadow:0 0 0 0 rgba(80,180,255,0)}35%{box-shadow:0 0 0 3px rgba(90,190,255,.9),0 0 34px rgba(80,170,255,.8)}100%{box-shadow:0 0 0 0 rgba(80,180,255,0)}}
+
+.card.newcard{animation:cardIn .34s cubic-bezier(.2,1.1,.4,1) both}
+.card.landed{animation:landed .5s cubic-bezier(.2,1.2,.35,1)}
+#game.shake{animation:shakeX .42s ease-out}
+.pinfo.hit{animation:flashRed .55s ease-out}
+.pinfo.healed{animation:flashHeal .55s ease-out}
+.pinfo.buffAtk{animation:infoGlowAtk .6s ease-out}
+.pinfo.buffDef{animation:infoGlowDef .6s ease-out}
+
+/* ===== 特效层 ===== */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
+.fxcard{position:fixed;z-index:46;pointer-events:none;
+  transition:transform .3s cubic-bezier(.2,.9,.3,1.25),opacity .22s;will-change:transform}
+.fxcard.back{transform:none}
+.fxcard.burst{animation:cardBurst .85s ease-out forwards}
+.fxring{position:absolute;border-radius:50%;border:3px solid #fff;transform:translate(-50%,-50%);animation:pulseRing .85s ease-out forwards}
+.fxtext{position:absolute;font-weight:900;transform:translate(-50%,-50%);animation:floatUp 1.05s ease-out forwards;
+  text-shadow:0 2px 12px #000,0 0 22px currentColor;white-space:nowrap}
+.fxtext.dmg{color:#ff5470}
+.fxtext.heal{color:#4df0a0}
+.fxtext.big{font-size:30px}
+.fxtext.mid{font-size:22px}
+.fxicon{position:absolute;transform:translate(-50%,-50%);animation:fxSpin 1s ease-out forwards;text-shadow:0 0 26px rgba(180,200,255,.9)}
+.fxplus{position:absolute;color:#5cf2a6;font-weight:900;font-size:22px;transform:translate(-50%,-50%);
+  animation:riseP 1.15s ease-out forwards;text-shadow:0 0 14px rgba(70,255,170,.9)}
+.fxslash{position:absolute;left:0;width:100%;height:6px;
+  background:linear-gradient(90deg,transparent,#ff6a3d,#ffd479,#ff6a3d,transparent);
+  box-shadow:0 0 20px rgba(255,140,80,.95);animation:slashGo .58s ease-out forwards}
+.fxshield{position:absolute;border:2px solid #6fe6ff;border-radius:16px;
+  box-shadow:0 0 34px rgba(110,230,255,.75) inset,0 0 26px rgba(110,230,255,.65);
+  background:radial-gradient(circle at 50% 50%,rgba(110,230,255,.22),transparent 70%);
+  animation:shieldPop 1.15s ease-out forwards}
+.fxhue{position:absolute;inset:0;backdrop-filter:hue-rotate(160deg) saturate(2.2);
+  -webkit-backdrop-filter:hue-rotate(160deg) saturate(2.2);animation:hueSweep .8s ease-out forwards}
+.fxbeam{position:absolute;height:5px;transform-origin:left center;border-radius:3px;animation:beamGo .5s ease-out forwards}
+
+/* ===== 遮罩 ===== */
+.overlay{position:fixed;inset:0;background:rgba(4,6,14,.9);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:50;
+  padding:20px;text-align:center;overflow-y:auto}
+.overlay h2{margin:0;font-size:25px;background:linear-gradient(90deg,#8fd8ff,#b79bff);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.overlay p{color:#9fb0d6;font-size:13.5px;line-height:1.9;margin:0;max-width:640px;text-align:left}
+.overlay .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+#rulesBox{max-height:64vh;overflow-y:auto;text-align:left;max-width:700px;
+  background:rgba(20,28,55,.7);border:1px solid rgba(110,150,255,.25);border-radius:14px;padding:16px 22px}
+#rulesBox h3{color:#9dc4ff;font-size:13.5px;margin:14px 0 6px}
+#rulesBox h3:first-child{margin-top:0}
+#rulesBox li{font-size:12px;color:#b9c7e6;line-height:1.8}
+#rulesBox b{color:#e2ebff}
+#rulesBox .em{color:#ffd479}
+#rulesBox table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px}
+#rulesBox td{padding:3px 6px;border-bottom:1px solid rgba(120,160,255,.12);color:#b9c7e6}
+#rulesBox td:first-child{white-space:nowrap;color:#e2ebff}
+
+#setBox{width:min(620px,92vw);max-height:72vh;overflow-y:auto;
+  background:rgba(20,28,55,.78);border:1px solid rgba(110,150,255,.28);border-radius:16px;padding:6px 20px}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:13px 2px;border-bottom:1px solid rgba(120,160,255,.13);text-align:left}
+.setrow:last-child{border-bottom:none}
+.setrow .slabel{font-size:14px;font-weight:700;color:#dbe6ff}
+.setrow .sdesc{font-size:11.5px;color:#8496bd;margin-top:3px;line-height:1.5}
+.sright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.sval{font-size:13px;font-weight:800;color:#8fd0ff;width:52px;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:190px;accent-color:#6fa8ff;cursor:pointer}
+.switch{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch .knob{position:absolute;inset:0;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22);border-radius:13px;transition:.22s;cursor:pointer}
+.switch .knob::before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;
+  border-radius:50%;background:#93a5cc;transition:.22s}
+.switch input:checked + .knob{background:linear-gradient(90deg,#3d7bff,#6fd0ff);border-color:#7fc0ff}
+.switch input:checked + .knob::before{transform:translateX(22px);background:#fff}
+.subset{padding-left:16px;border-left:2px solid rgba(120,160,255,.25);transition:opacity .2s}
+.subset.off{opacity:.35;pointer-events:none}
+
+/* ===== 选择器 ===== */
+#picker .pickerrow{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:92vw;padding:8px;
+  max-height:52vh;overflow-y:auto;overflow-x:visible}
+#pickerHint{color:#9fb0d6;font-size:13px;text-align:center;max-width:620px;line-height:1.7}
+.attrbtn{width:118px;height:118px;border-radius:14px;border:1px solid rgba(140,180,255,.4);
+  background:linear-gradient(165deg,rgba(60,90,180,.5),rgba(30,45,95,.6));color:#e8eeff;
+  font-size:38px;cursor:pointer;transition:.18s;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;font-family:inherit}
+.attrbtn:hover{transform:translateY(-4px);border-color:#9cc4ff;box-shadow:0 10px 26px rgba(80,130,255,.4)}
+.attrbtn span{font-size:13px;font-weight:700}
+
+#gear{position:fixed;top:8px;right:8px;z-index:60;width:34px;height:34px;border-radius:50%;
+  border:1px solid rgba(130,170,255,.35);background:rgba(20,30,60,.6);color:#bcd0ff;
+  font-size:16px;cursor:pointer;transition:.2s;backdrop-filter:blur(4px);line-height:1}
+#gear:hover{background:rgba(50,80,160,.75);transform:rotate(45deg)}
+
+#toast{position:fixed;left:50%;top:16%;transform:translate(-50%,-12px);
+  background:rgba(255,70,95,.92);color:#fff;padding:9px 20px;border-radius:22px;
+  font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:99;
+  box-shadow:0 8px 24px rgba(255,40,80,.45)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:640px){
+  .card{width:68px;height:96px}
+  .card .mid{font-size:19px}
+  .card .bot{font-size:10px}
+  .card .hint{font-size:8.5px}
+  .card.func .fn{font-size:9.5px}
+  .card.func .fd{font-size:7px}
+  .card.big{width:86px;height:120px}
+  .board{gap:12px}
+  #log{height:58px;font-size:10.5px}
+  .handzone{padding:12px 4px 4px;gap:5px}
+  .badges{font-size:9.5px}
+  .turnbar{font-size:11.5px;gap:6px}
+  .setrow{flex-direction:column;align-items:flex-start;gap:8px}
+  input[type=range]{width:150px}
+  .attrbtn{width:92px;height:92px;font-size:30px}
+}
+</style>
+</head>
+<body>
+
+<div id="stage"><div id="scaler">
+
+  <!-- 主菜单 -->
+  <div id="menu">
+    <h1>属性对决</h1>
+    <div class="sub">ROCK · SCISSORS · PAPER</div>
+    <button class="mbtn" onclick="startGame('ai')">🤖 人机对战</button>
+    <button class="mbtn" onclick="startGame('pvp')">👥 双人对战</button>
+    <button class="mbtn ghost" onclick="openSettings()">⚙️ 设置</button>
+    <button class="mbtn ghost" onclick="showRules()">📖 游戏规则</button>
+  </div>
+
+  <!-- 对战 -->
+  <div id="game" class="hidden">
+    <div class="pinfo" id="topInfo"></div>
+    <div class="handzone opp" id="topHand"></div>
+
+    <div class="turnbar" id="turnbar"></div>
+
+    <div class="board">
+      <div class="fieldwrap">
+        <div class="fieldlabel" id="fieldLabel">场上卡牌</div>
+        <div id="field"></div>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="actions" id="actions"></div>
+    <div class="handzone" id="bottomHand"></div>
+    <div class="pinfo" id="bottomInfo"></div>
+    <div id="log"></div>
+  </div>
+
+</div></div>
+
+<button id="gear" onclick="openSettings()">⚙</button>
+<div id="fx"></div>
+
+<!-- 交接 -->
+<div id="handoff" class="overlay hidden">
+  <h2 id="handoffTitle">轮到 玩家2</h2>
+  <p style="text-align:center;color:#8fa0c9">请将设备交给对方，点击后查看手牌<br>
+  <span style="color:#7fd7ff">（你的信息面板与手牌会显示在屏幕下方）</span></p>
+  <button class="mbtn" onclick="closeHandoff()">继续 ▶</button>
+</div>
+
+<!-- 结算 -->
+<div id="gameover" class="overlay hidden">
+  <h2 id="goTitle">胜利</h2>
+  <div class="row">
+    <button class="mbtn" onclick="restart()">再来一局</button>
+    <button class="mbtn ghost" onclick="backToMenu()">返回主菜单</button>
+  </div>
+</div>
+
+<!-- 选择器 -->
+<div id="picker" class="overlay hidden">
+  <h2 id="pickerTitle">选择</h2>
+  <div id="pickerHint"></div>
+  <div class="pickerrow" id="pickerCards"></div>
+  <div class="row" id="pickerActions"></div>
+</div>
+
+<!-- 规则 -->
+<div id="rules" class="overlay hidden">
+  <h2>游戏规则</h2>
+  <div id="rulesBox">
+    <h3>一、卡牌构成</h3>
+    <ul>
+      <li><b>一般卡</b>：花色（♠♥♦♣）、属性（石头/剪刀/布）、攻击 0~100、防御 0~100。攻防按<b>正态分布</b>生成（均值50，标准差20，截断0~100）。</li>
+      <li><b>功能卡</b>：共 <b>27 种</b>（见第六节）。</li>
+      <li><b>抽牌概率</b>：基础 20% 为功能牌；<b>连续 10 张未出功能牌</b>升为 25%；<b>连续 30 张</b>升为 50%；一旦<b>连续抽出 3 张功能牌</b>立即回落至 20% 并清零计数。计数全局共用。</li>
+    </ul>
+
+    <h3>二、属性克制</h3>
+    <ul>
+      <li>石头 ✊ 克 剪刀 ✌️　｜　剪刀 ✌️ 克 布 ✋　｜　布 ✋ 克 石头 ✊</li>
+      <li>【颠倒牌】可将克制关系完全反转（再打一次恢复）。</li>
+    </ul>
+
+    <h3>三、开局</h3>
+    <ul>
+      <li>双方各抽 <b>10 张</b>手牌，生命值各 <b>500</b> 点。</li>
+      <li>比对双方 ♠ 数量，多者先手；相同则随机决定。</li>
+    </ul>
+
+    <h3>四、出牌与伤害（核心）</h3>
+    <ul>
+      <li>先手方<b>自由</b>打出一张卡成为「场上牌」，<span class="em">本手不结算伤害</span>。</li>
+      <li>随后对方<b>必须打出属性克制场上牌的牌</b>进行防御：
+        <br>▸ <span class="em">受到伤害 = 场上牌攻击 − 自己这张牌的防御</span>（最低 0），<b>伤害由出牌防御方自己承受</b>。
+        <br>▸ 若防御 ≥ 对方场上牌攻击 → <span class="em">完全格挡</span>，多出的部分为防御溢出量。</li>
+      <li><b>自己出的牌攻击力不会在对拼中伤害对方</b>，它在这张牌<b>留在场上</b>后才形成压制。</li>
+      <li>防御完成后，你打出的这张牌成为新的「场上牌」，如此循环。</li>
+      <li>若<b>没有克制的牌</b>或<b>主动放弃防御</b>：受到场上牌攻击的 <b>100%</b> 伤害，之后由<b>受伤方自由出牌</b>。</li>
+    </ul>
+
+    <h3>五、伤害通道（实现关键）</h3>
+    <table>
+      <tr><td><b>受击伤害</b></td><td>对方场牌攻击、放弃防御的100%、诱饵牌200%。依次结算：🧿免疫 → 💠护盾（全额抵消） → 🧱屏障（吸收数值） → 扣血 → 🪞反伤（按实际扣血量反弹50%）</td></tr>
+      <tr><td><b>代价伤害</b></td><td>🎲赌注牌自伤。无视 🧿免疫 / 💠护盾 / 🧱屏障 / 🪞反伤，但<b>可以触发 🕊️复活牌</b></td></tr>
+    </table>
+
+    <h3>六、功能牌一览（27 种）</h3>
+    <ul>
+      <li>🔁 <b>反转牌</b>：强制对方出牌，并防御你上次打出的牌。</li>
+      <li>♻️ <b>重置牌</b>：弃掉全部手牌（进弃牌堆）并重抽 10 张，继续出牌。</li>
+      <li>➕ <b>恢复牌</b>：恢复 1~100 点生命（正态分布），继续出牌。</li>
+      <li>⚔️ <b>增强牌</b>：你所有牌攻击 ×2（可叠乘），继续出牌。</li>
+      <li>🛡️ <b>硬化牌</b>：你所有牌防御 ×2（可叠乘），继续出牌。</li>
+      <li>💠 <b>护盾牌</b>：挡下对方下一次攻击，继续出牌。</li>
+      <li>🔀 <b>颠倒牌</b>：克制关系颠倒（再打恢复），继续出牌。</li>
+      <li>🎴 <b>夺取牌</b>：随机夺取对方一张手牌，继续出牌。</li>
+      <li>🗡️ <b>穿透牌</b>：你下一张一般卡无视对方防御 50%（可叠乘），继续出牌。</li>
+      <li>🔨 <b>削防牌</b>：对方下一张用于防御的牌防御减半（可叠乘），继续出牌。</li>
+      <li>⚡ <b>破盾牌</b>：移除对方护盾，且本次伤害无法被护盾抵挡，继续出牌。</li>
+      <li>🚀 <b>突袭牌</b>：清空场上牌，立即进入你的自由出牌回合。</li>
+      <li>🪞 <b>反伤牌</b>：3 回合内你受到伤害的 50% 反弹给对方，继续出牌。</li>
+      <li>🧿 <b>免疫牌</b>：本回合免疫一切伤害与负面效果，继续出牌。</li>
+      <li>🧱 <b>屏障牌</b>：获得一层吸收 80 点伤害的护盾，继续出牌。</li>
+      <li>🃏 <b>抽取牌</b>：立即抽 3 张牌，继续出牌。</li>
+      <li>📑 <b>复制牌</b>：复制手牌中任意一张牌；<span class="em">唯一禁区：复制牌本体不可被复制</span>，继续出牌。</li>
+      <li>🌪️ <b>洗牌牌</b>：把自己全部手牌洗回牌库，重抽相同数量，继续出牌。</li>
+      <li>📦 <b>征召牌</b>：抽 3 张，选 1 张入手，其余弃掉，继续出牌。</li>
+      <li>👁️ <b>窥视牌</b>：本回合内持续可见对方手牌（人机对战中同样生效），继续出牌。</li>
+      <li>🔄 <b>调换牌</b>：把手牌中一张卡的属性改为任意属性，继续出牌。</li>
+      <li>🚫 <b>封色牌</b>：对方 2 回合内不能打出你指定的一种花色，继续出牌。</li>
+      <li>🪤 <b>诱饵牌</b>：布下陷阱，对方下一次<b>放弃防御</b>时受到 200% 伤害（消耗），继续出牌。</li>
+      <li>⛓️ <b>封锁牌</b>：对方下一回合只能打出一般卡，继续出牌。</li>
+      <li>🎲 <b>赌注牌</b>：掷出 X（0~100 正态）；50% 自己受 X 点代价伤害，50% 下一张一般卡攻击 +X（可累加），继续出牌。</li>
+      <li>🤝 <b>转桌牌</b>：交换双方全部手牌（不含场上牌）；若处于防御回合，换牌后<b>仍须打出克制作</b>；随后继续出牌。</li>
+      <li>🕊️ <b>复活牌</b>：<b>被动</b>。血量归零时若持有，立即回满血量、清除自身全部增益与减益、获得一个护盾；触发即消耗。</li>
+    </ul>
+
+    <h3>七、手牌上限</h3>
+    <ul>
+      <li>上限 = <b>round(当前血量 ÷ 10)</b>，最少 12 张，随血量实时变化。</li>
+      <li>血量 500 → 50 张；400 → 40；300 → 30；200 → 20；120 及以下 → 12。</li>
+      <li>抽牌时若已达上限，<b>超出部分不入手</b>。转桌牌换牌后允许暂时超上限持有。</li>
+    </ul>
+
+    <h3>八、牌堆</h3>
+    <ul>
+      <li>牌堆<b>永不抽空</b>。被洗回、夺取、交换的牌持续在循环中流转。</li>
+      <li>🌪️洗牌牌洗回的牌回到牌库（可被再次抽到）；♻️重置牌弃掉的牌进弃牌堆。</li>
+    </ul>
+
+    <h3>九、出牌限制</h3>
+    <ul><li><b>无任何数量惩罚</b>。一回合内可连续打出任意数量的功能牌，不会因此掉血。</li></ul>
+
+    <h3>十、界面与设置</h3>
+    <ul>
+      <li><b>面板位置</b>：双人对战时，轮到哪一方出牌，该方的信息面板与手牌即移动到<b>屏幕下方</b>；对手固定在<b>上方</b>。中央横条会明确标明当前回合归属及所在位置。</li>
+      <li><b>面板结构</b>：每位玩家的<b>效果徽章独占一行，位于血条上方</b>；血条在下方占满整行宽度。</li>
+      <li><b>状态徽章</b>：攻防倍率、护盾、屏障、反伤回合、穿透/削防层数、封色、封锁、赌注加成、被窥视等，均以徽章实时显示。</li>
+      <li><b>防窥牌</b>：双人对战是否遮挡对方手牌并弹出交接提示。窥视牌<b>不受防窥牌限制</b>，可强制查看对方手牌。</li>
+      <li><b>界面缩放</b>：20% ~ 200%。</li>
+      <li><b>扣除生命值提示</b>：默认关闭。开启后防御回合卡面显示「-N 血」或「格挡 +N」。</li>
+      <li><b>动画</b>：总开关，并分别控制出牌 / 弃牌 / 伤害 / 功能牌特效。</li>
+    </ul>
+
+    <h3>十一、胜负</h3>
+    <ul>
+      <li>任意一方生命值归 0（且手牌中没有 🕊️ 复活牌）即告失败，另一方获胜。</li>
+      <li>若持有 🕊️ 复活牌，则触发复活：回满 500 血、清除自身全部增益与减益、获得一个护盾，对局继续。</li>
+    </ul>
+  </div>
+  <div class="row"><button class="mbtn" onclick="hideRules()">我知道了</button></div>
+</div>
+
+<!-- 设置 -->
+<div id="settings" class="overlay hidden">
+  <h2>⚙️ 设置</h2>
+  <div id="setBox">
+    <div class="setrow">
+      <div><div class="slabel">界面缩放比例</div>
+        <div class="sdesc">整体 UI 等比缩放，范围 20% ~ 200%</div></div>
+      <div class="sright"><input type="range" id="scaleRange" min="20" max="200" step="5" oninput="setScale(this.value)">
+        <span class="sval" id="scaleVal">100%</span></div>
+    </div>
+    <div class="setrow">
+      <div><div class="slabel">双人防窥牌</div>
+        <div class="sdesc">开启后，双人对战时只有当前行动方能看到自己的手牌，轮换时弹出交接提示。</div></div>
+      <div class="sright"><label class="switch"><input type="checkbox" id="cbAnti" onchange="setAntiPeek(this.checked)"><span class="knob"></span></label></div>
+    </div>
+    <div class="setrow">
+      <div><div class="slabel">扣除生命值提示</div>
+        <div class="sdesc">默认关闭。开启后防御回合中，卡面底部显示预估结果：红色「-N 血」为会掉的生命；绿色「格挡 +N」为完全挡住并显示防御溢出量。</div></div>
+      <div class="sright"><label class="switch"><input type="checkbox" id="cbHint" onchange="setDamageHint(this.checked)"><span class="knob"></span></label></div>
+    </div>
+    <div class="setrow">
+      <div><div class="slabel">动画总开关</div>
+        <div class="sdesc">关闭后所有动画与特效都不播放</div></div>
+      <div class="sright"><label class="switch"><input type="checkbox" id="cbAnim" onchange="setAnimMaster(this.checked)"><span class="knob"></span></label></div>
+    </div>
+    <div class="setrow subset" id="subAnims">
+      <div style="width:100%;display:flex;flex-direction:column;gap:13px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+          <div><div class="slabel" style="font-size:13px">🃏 出牌动画</div>
+            <div class="sdesc">打出的牌从手牌飞向场中</div></div>
+          <label class="switch"><input type="checkbox" id="cbAnimPlay" onchange="setAnimFlag('animPlay',this.checked)"><span class="knob"></span></label>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+          <div><div class="slabel" style="font-size:13px">🗑️ 弃牌动画</div>
+            <div class="sdesc">被弃掉的牌旋转飞出</div></div>
+          <label class="switch"><input type="checkbox" id="cbAnimDiscard" onchange="setAnimFlag('animDiscard',this.checked)"><span class="knob"></span></label>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+          <div><div class="slabel" style="font-size:13px">💥 扣血 / 恢复动画</div>
+            <div class="sdesc">血条闪光、屏幕震动、飘出数字</div></div>
+          <label class="switch"><input type="checkbox" id="cbAnimDamage" onchange="setAnimFlag('animDamage',this.checked)"><span class="knob"></span></label>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+          <div><div class="slabel" style="font-size:13px">✨ 功能牌触发特效</div>
+            <div class="sdesc">各功能牌的专属触发动画</div></div>
+          <label class="switch"><input type="checkbox" id="cbAnimFunc" onchange="setAnimFlag('animFunc',this.checked)"><span class="knob"></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <button class="mbtn" onclick="closeSettings()">完成</button>
+    <button class="mbtn ghost" onclick="resetSettings()">恢复默认</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ==================================================================
+   常量
+================================================================== */
+const SUITS = ['♠','♥','♦','♣'];
+const RED_SUITS = ['♥','♦'];
+const ATTRS = ['rock','scissors','paper'];
+const ATTR_NAME = {rock:'石头', scissors:'剪刀', paper:'布'};
+const ATTR_ICON = {rock:'✊', scissors:'✌', paper:'✋'};
+
+const FUNC_DEFS = {
+  reverse  :{name:'反转牌', icon:'🔁', desc:'强制对方防御你上次的牌'},
+  reset    :{name:'重置牌', icon:'♻️', desc:'弃光手牌重抽10张'},
+  recover  :{name:'恢复牌', icon:'➕', desc:'恢复1~100点生命'},
+  enhance  :{name:'增强牌', icon:'⚔️', desc:'所有牌攻击×2'},
+  harden   :{name:'硬化牌', icon:'🛡️', desc:'所有牌防御×2'},
+  shield   :{name:'护盾牌', icon:'💠', desc:'挡下下一次攻击'},
+  invert   :{name:'颠倒牌', icon:'🔀', desc:'克制关系颠倒'},
+  steal    :{name:'夺取牌', icon:'🎴', desc:'夺取对方一张牌'},
+  pierce   :{name:'穿透牌', icon:'🗡️', desc:'下张卡无视防御50%'},
+  shatter  :{name:'削防牌', icon:'🔨', desc:'对方下张防御减半'},
+  breaker  :{name:'破盾牌', icon:'⚡', desc:'破盾并使伤害无法被挡'},
+  raid     :{name:'突袭牌', icon:'🚀', desc:'清空场面，立即自由出牌'},
+  reflect  :{name:'反伤牌', icon:'🪞', desc:'3回合反弹50%伤害'},
+  immune   :{name:'免疫牌', icon:'🧿', desc:'本回合免疫伤害'},
+  barrier  :{name:'屏障牌', icon:'🧱', desc:'吸收80点伤害'},
+  draw3    :{name:'抽取牌', icon:'🃏', desc:'立即抽3张牌'},
+  copy     :{name:'复制牌', icon:'📑', desc:'复制任意一张手牌'},
+  shuffle  :{name:'洗牌牌', icon:'🌪️', desc:'洗回手牌重抽同数量'},
+  recruit  :{name:'征召牌', icon:'📦', desc:'抽3张选1张'},
+  peek     :{name:'窥视牌', icon:'👁️', desc:'本回合可见对方手牌'},
+  swapAttr :{name:'调换牌', icon:'🔄', desc:'改一张牌的属性'},
+  sealSuit :{name:'封色牌', icon:'🚫', desc:'对方2回合禁出某花色'},
+  bait     :{name:'诱饵牌', icon:'🪤', desc:'对方放弃防御则受200%'},
+  lock     :{name:'封锁牌', icon:'⛓️', desc:'对方下回合只能出一般卡'},
+  gamble   :{name:'赌注牌', icon:'🎲', desc:'50%自伤X / 50%下张卡+X'},
+  exchange :{name:'转桌牌', icon:'🤝', desc:'交换双方全部手牌'},
+  revive   :{name:'复活牌', icon:'🕊️', desc:'血量归零时满血复活'}
+};
+const FUNC_KEYS = Object.keys(FUNC_DEFS);
+
+const MAX_HP = 500;
+const INIT_HAND = 10;
+const MAX_PASS = 8;   // 连续过牌上限，防死循环
+
+let uid = 0;
+const rnd = n => Math.floor(Math.random()*n);
+
+function randNormal(mean, sd, lo, hi){
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  const z = Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  return Math.max(lo, Math.min(hi, Math.round(mean + z*sd)));
+}
+
+/* ==================================================================
+   设置
+================================================================== */
+const DEFAULT_SETTINGS = {
+  antiPeek:true, scale:100, showDamageHint:false,
+  anim:true, animPlay:true, animDiscard:true, animDamage:true, animFunc:true
+};
+const SETTINGS = Object.assign({}, DEFAULT_SETTINGS);
+const SET_KEY = 'attrduel.settings.v3';
+const BOOL_KEYS = ['antiPeek','showDamageHint','anim','animPlay','animDiscard','animDamage','animFunc'];
+
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem(SET_KEY);
+    if(raw){ const o = JSON.parse(raw);
+      for(const k in DEFAULT_SETTINGS) if(k in o) SETTINGS[k] = o[k]; }
+  }catch(e){}
+  SETTINGS.scale = Math.max(20, Math.min(200, Number(SETTINGS.scale)||100));
+  BOOL_KEYS.forEach(k => SETTINGS[k] = !!SETTINGS[k]);
+}
+function saveSettings(){ try{ localStorage.setItem(SET_KEY, JSON.stringify(SETTINGS)); }catch(e){} }
+function applyScale(){ document.documentElement.style.setProperty('--s', SETTINGS.scale/100); }
+function A(key){ return SETTINGS.anim && (!key || SETTINGS[key]); }
+
+/* ==================================================================
+   抽牌（无限牌堆 + 三档动态概率）
+================================================================== */
+let drawStats = { noFunc:0, funcRun:0 };
+
+function currentFuncP(){
+  if(drawStats.funcRun >= 3) return 0.20;
+  if(drawStats.noFunc >= 30) return 0.50;
+  if(drawStats.noFunc >= 10) return 0.25;
+  return 0.20;
+}
+function makeNormalCard(){
+  return { id:++uid, type:'normal', suit:SUITS[rnd(4)], attr:ATTRS[rnd(3)],
+    atk:randNormal(50,20,0,100), def:randNormal(50,20,0,100),
+    bonusAtk:0, isCopy:false };
+}
+function makeFuncCard(){
+  return { id:++uid, type:'func', kind:FUNC_KEYS[rnd(FUNC_KEYS.length)], isCopy:false };
+}
+function drawCard(){
+  const p = currentFuncP();
+  const isFunc = Math.random() < p;
+  if(isFunc){
+    drawStats.funcRun++;
+    drawStats.noFunc = 0;
+    if(drawStats.funcRun >= 3){ drawStats.funcRun = 0; drawStats.noFunc = 0; }
+    return makeFuncCard();
+  }
+  drawStats.noFunc++;
+  drawStats.funcRun = 0;
+  return makeNormalCard();
+}
+
+/* ==================================================================
+   全局状态
+================================================================== */
+let players = [];
+let state = null;
+let discardMode = false;
+const discardSel = new Set();
+const seenIds = new Set();
+let toastTimer = null, aiTimer = null;
+let logLines = [], fxQueue = [];
+
+function counterTable(inverted){
+  if(!inverted) return { rock:'scissors', scissors:'paper', paper:'rock' };
+  return { rock:'paper', paper:'scissors', scissors:'rock' };
+}
+function requiredAttr(inverted, fieldAttr){
+  const t = counterTable(inverted);
+  for(const k in t) if(t[k]===fieldAttr) return k;
+  return null;
+}
+/* 有效攻击 = 基础×倍率 + 赌注加成 */
+const effAtk = (p,c) => Math.round(c.atk * p.atkMult) + (c.bonusAtk || 0);
+const effDef = (p,c) => Math.round(c.def * p.defMult);
+const handLimit = p => Math.max(12, Math.round(p.hp / 10));
+
+/* 防御实际生效值（含 削防 与 场上穿透） */
+function resolveDef(defender, card, fieldPierce){
+  let d = effDef(defender, card);
+  if(defender && defender.shatterStacks > 0) d = Math.round(d * Math.pow(0.5, defender.shatterStacks));
+  if(fieldPierce > 0) d = Math.round(d * Math.pow(0.5, fieldPierce));
+  return Math.max(0, d);
+}
+
+/* ==================================================================
+   面板槽位
+================================================================== */
+function layoutIdx(){
+  if(!state) return { bottom:0, top:1 };
+  if(state.mode === 'pvp') return { bottom: state.turn, top: 1-state.turn };
+  return { bottom:0, top:1 };
+}
+function infoEl(pi){
+  const L = layoutIdx();
+  return document.getElementById(L.bottom===pi ? 'bottomInfo' : 'topInfo');
+}
+function handEl(pi){
+  const L = layoutIdx();
+  return document.getElementById(L.bottom===pi ? 'bottomHand' : 'topHand');
+}
+
+/* ==================================================================
+   特效调度 & 工具
+================================================================== */
+function queueFx(fn){ if(fn) fxQueue.push(fn); }
+function flushFx(){
+  if(!fxQueue.length) return;
+  const q = fxQueue; fxQueue = [];
+  requestAnimationFrame(()=>{ q.forEach(f=>{ try{ f(); }catch(e){} }); });
+}
+function log(text, cls){
+  logLines.push(`<div class="${cls||''}">${text}</div>`);
+  if(logLines.length > 160) logLines = logLines.slice(-160);
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+function $(s){ return document.querySelector(s); }
+function fxLayer(){ return document.getElementById('fx'); }
+function rectOf(el){
+  if(!el) return {x:0,y:0,w:0,h:0,left:0,top:0};
+  const r = el.getBoundingClientRect();
+  return {x:r.left+r.width/2, y:r.top+r.height/2, w:r.width, h:r.height, left:r.left, top:r.top};
+}
+function retrigger(el, cls, dur){
+  if(!el) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls), dur);
+}
+
+/* ==================================================================
+   开始游戏
+================================================================== */
+function startGame(mode){
+  clearTimeout(aiTimer);
+  ['menu','gameover','handoff','rules','settings','picker'].forEach(id=>
+    document.getElementById(id).classList.add('hidden'));
+  document.getElementById('game').classList.remove('hidden');
+
+  const mk = (name, isAI) => ({
+    name, isAI, hp:MAX_HP, maxHp:MAX_HP, hand:[],
+    atkMult:1, defMult:1, shield:false, barrier:0,
+    reflectTurns:0, immune:false, lockTurns:0,
+    sealSuit:null, sealSuitTurns:0,
+    pierceStacks:0, shatterStacks:0, gambleBuff:0,
+    lastPlayed:null, dead:false
+  });
+  players = [ mk('玩家1', false), mk(mode==='ai'?'电脑':'玩家2', mode==='ai') ];
+
+  drawStats = { noFunc:0, funcRun:0 };
+  logLines = []; fxQueue = []; seenIds.clear();
+  discardMode = false; discardSel.clear();
+  pickerState = null;
+  log(`<span class="sys">══ 对局开始 ══</span>`);
+
+  players.forEach(p=>{ for(let i=0;i<INIT_HAND;i++) p.hand.push(drawCard()); });
+
+  const sp0 = players[0].hand.filter(c=>c.suit==='♠').length;
+  const sp1 = players[1].hand.filter(c=>c.suit==='♠').length;
+  log(`先手判定 — 玩家1 ♠×${sp0} ｜ ${players[1].name} ♠×${sp1}`);
+
+  let first;
+  if(sp0>sp1){ first=0; log(`<span class="hl">玩家1 ♠更多，先手！</span>`); }
+  else if(sp1>sp0){ first=1; log(`<span class="hl">${players[1].name} ♠更多，先手！</span>`); }
+  else { first=rnd(2); log(`<span class="hl">♠数量相同，随机决定：${players[first].name} 先手！</span>`); }
+
+  state = {
+    mode, turn:first, phase:'free', field:null, fieldOwner:null, fieldPierce:0,
+    inverted:false, over:false, winner:null, handoff:false, aiSteps:0,
+    animLock:false, baitArmed:false, breakerActive:false, peekTurn:-1, passCount:0
+  };
+
+  if(mode==='pvp' && SETTINGS.antiPeek){
+    state.handoff = true;
+    setTimeout(()=>{ if(state.handoff && !state.over) showHandoff(first); }, A('animPlay')?550:0);
+  }
+  render();
+  maybeAI();
+}
+
+function restart(){ const m = state ? state.mode : 'ai'; startGame(m); }
+function backToMenu(){
+  clearTimeout(aiTimer);
+  ['game','gameover','handoff','picker'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('menu').classList.remove('hidden');
+}
+function showRules(){ document.getElementById('rules').classList.remove('hidden'); }
+function hideRules(){ document.getElementById('rules').classList.add('hidden'); }
+
+/* ==================================================================
+   设置面板
+================================================================== */
+function openSettings(){ syncSettingsUI(); document.getElementById('settings').classList.remove('hidden'); }
+function closeSettings(){ document.getElementById('settings').classList.add('hidden'); }
+function syncSettingsUI(){
+  $('#scaleRange').value = SETTINGS.scale;
+  $('#scaleVal').textContent = SETTINGS.scale + '%';
+  $('#cbAnti').checked = SETTINGS.antiPeek;
+  $('#cbHint').checked = SETTINGS.showDamageHint;
+  $('#cbAnim').checked = SETTINGS.anim;
+  $('#cbAnimPlay').checked = SETTINGS.animPlay;
+  $('#cbAnimDiscard').checked = SETTINGS.animDiscard;
+  $('#cbAnimDamage').checked = SETTINGS.animDamage;
+  $('#cbAnimFunc').checked = SETTINGS.animFunc;
+  $('#subAnims').classList.toggle('off', !SETTINGS.anim);
+}
+function setScale(v){
+  SETTINGS.scale = Math.max(20, Math.min(200, Number(v)||100));
+  $('#scaleVal').textContent = SETTINGS.scale + '%';
+  applyScale(); saveSettings();
+}
+function setAntiPeek(v){
+  SETTINGS.antiPeek = !!v; saveSettings();
+  if(state && !state.over){
+    if(!SETTINGS.antiPeek && state.handoff && state.mode==='pvp'){
+      state.handoff = false; document.getElementById('handoff').classList.add('hidden');
+    }
+    render();
+  }
+}
+function setDamageHint(v){ SETTINGS.showDamageHint = !!v; saveSettings(); if(state && !state.over) render(); }
+function setAnimMaster(v){ SETTINGS.anim = !!v; $('#subAnims').classList.toggle('off', !SETTINGS.anim); saveSettings(); }
+function setAnimFlag(k,v){ SETTINGS[k] = !!v; saveSettings(); }
+function resetSettings(){
+  Object.assign(SETTINGS, DEFAULT_SETTINGS);
+  applyScale(); syncSettingsUI(); saveSettings();
+  if(state) render();
+}
+
+/* ==================================================================
+   选择器（复制 / 征召 / 调换 / 封色）
+================================================================== */
+let pickerState = null;
+function openPicker(opts){
+  pickerState = opts;
+  document.getElementById('pickerTitle').textContent = opts.title || '选择';
+  document.getElementById('pickerHint').innerHTML = opts.hint || '';
+  const box = document.getElementById('pickerCards');
+  if(opts.cards){
+    box.innerHTML = opts.cards.map(c=>cardHTML(c, opts.owner, '', null)).join('');
+  }else if(opts.buttons){
+    box.innerHTML = opts.buttons.map((b,i)=>
+      `<button class="attrbtn" data-bi="${i}">${b.icon||''}<span>${b.label}</span></button>`).join('');
+  }else box.innerHTML = '';
+  document.getElementById('pickerActions').innerHTML = opts.cancelText
+    ? `<button class="mbtn ghost" onclick="closePicker()">${opts.cancelText}</button>` : '';
+  document.getElementById('picker').classList.remove('hidden');
+}
+function closePicker(){
+  const cb = pickerState && pickerState.onCancel;
+  pickerState = null;
+  document.getElementById('picker').classList.add('hidden');
+  if(cb) cb();
+}
+function pickerOpen(){ return !document.getElementById('picker').classList.contains('hidden'); }
+
+/* ==================================================================
+   交接
+================================================================== */
+function showHandoff(pi){
+  document.getElementById('handoffTitle').textContent = '轮到 ' + players[pi].name;
+  document.getElementById('handoff').classList.remove('hidden');
+}
+function closeHandoff(){
+  state.handoff = false;
+  document.getElementById('handoff').classList.add('hidden');
+  render();
+}
+
+/* ==================================================================
+   渲染
+================================================================== */
+/* ★ 窥视判定必须排在最前，否则会被 AI 隐藏 / 防窥逻辑短路 */
+function isRevealed(pi){
+  const p = players[pi];
+
+  // 窥视优先：本回合内，主动窥视者可看到对方全部手牌（人机模式同样生效）
+  if(state.peekTurn === state.turn && pi === 1 - state.turn) return true;
+
+  if(p.isAI) return false;
+  if(state.mode === 'ai') return pi === 0;
+  if(!SETTINGS.antiPeek) return true;
+  return state.turn === pi && !state.handoff;
+}
+
+function cardHTML(c, owner, extra, hint){
+  if(c.type === 'func'){
+    const d = FUNC_DEFS[c.kind];
+    const cls = c.kind === 'revive' ? 'revive' : '';
+    return `<div class="card func ${cls} ${c.isCopy?'copied':''} ${extra||''}" data-id="${c.id}">
+      <div class="fi">${d.icon}</div>
+      <div class="fn">${d.name}</div>
+      <div class="fd">${d.desc}</div>
+    </div>`;
+  }
+  const red = RED_SUITS.includes(c.suit);
+  const a = owner ? effAtk(owner,c) : c.atk;
+  const b = owner ? effDef(owner,c) : c.def;
+  const hintHTML = hint ? `<div class="hint${hint.safe?' safe':''}">${hint.text}</div>` : '';
+  return `<div class="card normal${red?' red':''}${hint?' has-hint':''} ${c.isCopy?'copied':''} ${extra||''}" data-id="${c.id}">
+    <div class="top"><span class="suit">${c.suit}</span><span class="attrname">${ATTR_NAME[c.attr]}</span></div>
+    <div class="mid">${ATTR_ICON[c.attr]}</div>
+    <div class="bot"><span class="atk">⚔${a}</span><span class="def">🛡${b}</span></div>
+    ${hintHTML}
+  </div>`;
+}
+
+const bd = (txt, cls) => `<span class="badge ${cls||''}">${txt}</span>`;
+function stateBadgesHTML(p, pi){
+  const t = [];
+  if(state.over && p.hp <= 0) t.push(bd('💀 已阵亡','bad'));
+  else if(state.turn === pi && !state.over) t.push(bd('▶ 行动中','act'));
+  if(p.immune) t.push(bd('🧿 免疫','good'));
+  if(p.shield) t.push(bd('💠 护盾','sh'));
+  if(p.barrier > 0) t.push(bd('🧱 屏障 '+p.barrier,'sh'));
+  if(p.reflectTurns > 0) t.push(bd('🪞 反伤 '+p.reflectTurns,'good'));
+  if(p.atkMult > 1) t.push(bd('⚔️ ×'+p.atkMult,'good'));
+  if(p.defMult > 1) t.push(bd('🛡️ ×'+p.defMult,'good'));
+  if(p.gambleBuff > 0) t.push(bd('🎲 +'+p.gambleBuff,'good'));
+  if(p.pierceStacks > 0) t.push(bd('🗡️ 穿透×'+p.pierceStacks,'good'));
+  if(p.shatterStacks > 0) t.push(bd('🔨 削防×'+p.shatterStacks,'bad'));
+  if(p.lockTurns > 0) t.push(bd('⛓️ 封锁 '+p.lockTurns,'bad'));
+  if(p.sealSuitTurns > 0) t.push(bd('🚫 封色'+p.sealSuit+' '+p.sealSuitTurns,'bad'));
+  // ★ 被窥视提示
+  if(state.peekTurn === state.turn && pi !== state.turn) t.push(bd('👁️ 被窥视中','bad'));
+  t.push(bd('🃏 '+p.hand.length+' / '+handLimit(p)));
+  return t.join('');
+}
+
+/* 面板：上排「名字 + 效果徽章」；下排「血条（整行）」 */
+function renderPlayerInfo(pi){
+  const p = players[pi];
+  const el = infoEl(pi);
+  if(!el) return;
+  const L = layoutIdx();
+  const pct = Math.max(0, p.hp / p.maxHp * 100);
+  const cls = pct > 55 ? '' : (pct > 25 ? 'low' : 'crit');
+  const active = state.turn === pi && !state.over;
+  const nameTag = (state.mode==='ai') ? (pi===0?'<span class="tag">你</span>':'<span class="tag">AI</span>') : '';
+  el.className = 'pinfo' + (active?' active':'') + (L.bottom===pi?' me':'')
+    + (p.hp<=0 ? ' dead' : '');
+  el.innerHTML = `
+    <div class="prow">
+      <div class="pname">${p.name}${nameTag}</div>
+      <div class="badges">${stateBadgesHTML(p, pi)}</div>
+    </div>
+    <div class="hpbar">
+      <div class="hpfill ${cls}" style="width:${pct}%"></div>
+      <span class="hptext">${p.hp} / ${p.maxHp}</span>
+    </div>`;
+}
+
+function renderHandInto(pi, zone){
+  if(!zone) return;
+  const p = players[pi];
+  const active = state.turn === pi && !state.over;
+
+  if(!isRevealed(pi)){
+    zone.innerHTML = p.hand.map(()=>`<div class="card back"></div>`).join('');
+    return;
+  }
+
+  const showHint = !!SETTINGS.showDamageHint;
+  const defending = showHint && active && !state.handoff && state.phase==='counter' && !!state.field;
+  const incoming = defending ? effAtk(players[state.fieldOwner], state.field) : 0;
+
+  zone.innerHTML = p.hand.map(c=>{
+    let cls = '', hint = null;
+    // 被窥视方的手牌只做展示，不可操作
+    const operable = active && !state.handoff && !pickerOpen() && !p.isAI;
+    if(operable){
+      if(discardMode && discardSel.has(c.id)) cls = 'sel';
+      else if(!canPlay(pi, c)) cls = 'invalid';
+      else if(defending && c.type === 'normal'){
+        const myDef = resolveDef(p, c, state.fieldPierce);
+        const take = Math.max(0, incoming - myDef);
+        hint = take > 0 ? {text:'-'+take+' 血', safe:false}
+                        : {text:'格挡 +'+(myDef - incoming), safe:true};
+      }
+    }else if(active && !state.handoff && !pickerOpen() && defending && c.type === 'normal'){
+      // 窥视 AI 手牌时也给数值提示，便于判断（不可点击）
+      const myDef = resolveDef(p, c, state.fieldPierce);
+      const take = Math.max(0, incoming - myDef);
+      hint = take > 0 ? {text:'-'+take+' 血', safe:false}
+                      : {text:'格挡 +'+(myDef - incoming), safe:true};
+    }
+    if(A('animPlay') && !seenIds.has(c.id)){ cls += ' newcard'; seenIds.add(c.id); }
+    return cardHTML(c, p, cls, hint);
+  }).join('');
+}
+
+function renderTurnBar(){
+  const el = document.getElementById('turnbar');
+  if(!el) return;
+  if(state.over){
+    const txt = state.winner === null ? '— 平局 —' : `— ${players[state.winner].name} 获胜 —`;
+    el.innerHTML = `<span class="tname">${txt}</span>`;
+    return;
+  }
+  const L = layoutIdx();
+  const cur = players[state.turn];
+  const opp = players[1-state.turn];
+  const curSide = (L.bottom === state.turn) ? '下方 ▼' : '上方 ▲';
+  const oppSide = (L.bottom === (1-state.turn)) ? '下方 ▼' : '上方 ▲';
+  const extra = (state.mode === 'pvp') ? `<span class="tslot">（手牌在${curSide}）</span>` : '';
+  const peekTag = (state.peekTurn === state.turn) ? `<span class="tslot">· 👁️ 窥视生效中</span>` : '';
+  el.innerHTML = `<span class="tdot"></span>当前回合：<b class="tname">${cur.name}</b>`
+    + extra + peekTag + `<span class="tslot">｜ 对手：${opp.name}（${oppSide}）</span>`;
+}
+
+function renderField(){
+  const el = document.getElementById('field');
+  const lab = document.getElementById('fieldLabel');
+  if(state.field){
+    lab.textContent = players[state.fieldOwner].name + ' 的场上牌'
+      + (state.fieldPierce>0 ? `（穿透×${state.fieldPierce}）` : '');
+    el.innerHTML = cardHTML(state.field, players[state.fieldOwner], 'big');
+  }else{
+    lab.textContent = '场上卡牌';
+    el.innerHTML = `<div class="nofield">空</div>`;
+  }
+}
+
+function renderStatus(){
+  const el = document.getElementById('status');
+  if(state.over){
+    el.textContent = state.winner === null ? '对局结束 · 平局' : '对局结束';
+    return;
+  }
+  const p = players[state.turn];
+  if(state.phase === 'counter' && state.field){
+    const req = requiredAttr(state.inverted, state.field.attr);
+    const atk = effAtk(players[state.fieldOwner], state.field);
+    el.innerHTML = `<b class="in">${p.name}</b> 的回合 · 必须出【${ATTR_NAME[req]}】防御 `
+      + `<span class="in">⚔${atk}</span>（防御不足将掉血）`;
+  }else{
+    el.innerHTML = `<b>${p.name}</b> 的回合 · 可任意出牌（不结算伤害）`;
+  }
+}
+
+function renderActions(){
+  const box = document.getElementById('actions');
+  const pi = state.turn;
+  const p = players[pi];
+  const human = !p.isAI && !state.over && !state.handoff && !pickerOpen();
+  let html = '';
+  if(human){
+    if(state.phase === 'counter' && state.field && !discardMode){
+      html += `<button class="abtn danger" onclick="giveUp()">🏳️ 放弃防御（100%伤害${state.baitArmed?'→200%':''}）</button>`;
+    }
+    if(!discardMode) html += `<button class="abtn" onclick="enterDiscard()">🗑️ 弃牌</button>`;
+    else {
+      html += `<button class="abtn go" onclick="confirmDiscard()">确认弃掉 ${discardSel.size} 张</button>`;
+      html += `<button class="abtn" onclick="cancelDiscard()">取消</button>`;
+    }
+  }
+  if(!html) html = state.over ? `<button class="abtn" disabled>对局结束</button>`
+                             : `<button class="abtn" disabled>等待中…</button>`;
+  box.innerHTML = html;
+}
+
+function renderLog(){
+  const el = document.getElementById('log');
+  el.innerHTML = logLines.join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function render(){
+  if(!state) return;
+  const L = layoutIdx();
+  const topHand = document.getElementById('topHand');
+  const bottomHand = document.getElementById('bottomHand');
+  topHand.dataset.pi = String(L.top);
+  bottomHand.dataset.pi = String(L.bottom);
+  renderPlayerInfo(0); renderPlayerInfo(1);
+  renderHandInto(L.top, topHand);
+  renderHandInto(L.bottom, bottomHand);
+  renderTurnBar(); renderField(); renderStatus(); renderActions(); renderLog();
+  flushFx();
+}
+
+/* ==================================================================
+   出牌合法性
+================================================================== */
+function canPlay(pi, card){
+  if(!state || state.over) return false;
+  const p = players[pi];
+  const isMyTurn = state.turn === pi;
+  if(isMyTurn && p.lockTurns > 0 && card.type === 'func') return false;
+  if(card.type === 'func') return true;
+  if(isMyTurn && p.sealSuitTurns > 0 && p.sealSuit && card.suit === p.sealSuit) return false;
+  if(state.phase === 'counter' && state.field){
+    return counterTable(state.inverted)[card.attr] === state.field.attr;
+  }
+  return true;
+}
+
+/* ==================================================================
+   回合切换
+================================================================== */
+function tickCounters(pi){
+  const p = players[pi];
+  if(p.reflectTurns > 0) p.reflectTurns--;
+  if(p.lockTurns > 0) p.lockTurns--;
+  if(p.sealSuitTurns > 0){ p.sealSuitTurns--; if(p.sealSuitTurns <= 0) p.sealSuit = null; }
+  p.immune = false;
+}
+
+function endTurn(next){
+  const outgoing = state.turn;
+  tickCounters(outgoing);
+  if(state.peekTurn === outgoing) state.peekTurn = -1;   // 窥视随回合结束失效
+  state.turn = next;
+  state.aiSteps = 0;
+  if(state.mode === 'pvp' && SETTINGS.antiPeek && !state.over){
+    state.handoff = true;
+    const delay = (A('animPlay')||A('animFunc')) ? 720 : 0;
+    setTimeout(()=>{ if(state.handoff && !state.over && state.turn === next) showHandoff(next); }, delay);
+  }
+}
+
+/* ==================================================================
+   伤害系统
+================================================================== */
+function checkRevive(pi){
+  const p = players[pi];
+  if(p.hp > 0) return false;
+  const idx = p.hand.findIndex(c=>c.type==='func' && c.kind==='revive');
+  if(idx < 0) return false;
+  const rv = p.hand.splice(idx,1)[0];
+  seenIds.delete(rv.id);
+  p.hp = p.maxHp;
+  p.atkMult = 1; p.defMult = 1;
+  p.barrier = 0; p.reflectTurns = 0; p.immune = false;
+  p.lockTurns = 0; p.sealSuit = null; p.sealSuitTurns = 0;
+  p.pierceStacks = 0; p.shatterStacks = 0; p.gambleBuff = 0;
+  p.shield = true;
+  log(`<span class="hl">🕊️ ${p.name} 的复活牌被触发！回满 ${p.maxHp} HP，清除全部增益与减益，并获得一个护盾</span>`);
+  queueFx(()=>fxRevive(pi));
+  return true;
+}
+
+function checkDeath(pi){
+  const p = players[pi];
+  if(p.hp > 0) return false;
+
+  if(checkRevive(pi)) return true;
+
+  p.dead = true;
+  if(!state.over){
+    state.over   = true;
+    state.winner = 1 - pi;
+
+    state.handoff = false;
+    document.getElementById('handoff').classList.add('hidden');
+    if(pickerState){
+      pickerState = null;
+      document.getElementById('picker').classList.add('hidden');
+    }
+    discardMode = false;
+    discardSel.clear();
+
+    log(`<span class="hl">💀 ${p.name} 生命值归零 —— ${players[1-pi].name} 获胜！</span>`);
+  }
+  return false;
+}
+
+/* 唯一扣血出口 */
+function applyRawDamage(pi, dmg){
+  const p = players[pi];
+  if(dmg <= 0) return 0;
+  const real = Math.min(dmg, p.hp);
+  p.hp = Math.max(0, p.hp - dmg);
+  log(`<span class="dmg">${p.name} 受到 ${real} 点伤害 → 剩余 ${p.hp} HP</span>`);
+  queueFx(()=>fxDamage(pi, real));
+  checkDeath(pi);
+  return real;
+}
+
+/* 受击通道：免疫 → 护盾 → 屏障 → 扣血 → 反伤 */
+function dealAttack(pi, dmg, fromPi){
+  const p = players[pi];
+  if(dmg <= 0){ log(`<span class="heal">🛡 ${p.name} 完全格挡，未受到伤害</span>`); return 0; }
+
+  if(p.immune){
+    log(`<span class="hl">🧿 ${p.name} 处于免疫状态，伤害无效</span>`);
+    queueFx(()=>{ if(!A('animDamage')) return; const el=infoEl(pi);
+      if(el){ const c=rectOf(el); fxText(c.x,c.y-6,'🧿 免疫','heal mid'); } });
+    return 0;
+  }
+  if(p.shield){
+    p.shield = false;
+    log(`<span class="hl">💠 ${p.name} 的护盾抵消了 ${dmg} 点伤害</span>`);
+    queueFx(()=>{ if(!A('animDamage')) return; const el=infoEl(pi);
+      if(el){ const c=rectOf(el); fxText(c.x,c.y-6,'💠 抵挡','heal mid'); } });
+    return 0;
+  }
+  if(p.barrier > 0){
+    const ab = Math.min(p.barrier, dmg);
+    p.barrier -= ab; dmg -= ab;
+    log(`🧱 ${p.name} 的屏障吸收 ${ab} 点（剩余 ${p.barrier}）`);
+  }
+  if(dmg <= 0) return 0;
+
+  const real = applyRawDamage(pi, dmg);
+
+  if(p.reflectTurns > 0 && real > 0 && fromPi !== undefined && fromPi >= 0 && !state.over){
+    const back = Math.round(real * 0.5);
+    if(back > 0){
+      log(`<span class="fx">🪞 ${p.name} 反伤 ${back} 点给 ${players[fromPi].name}</span>`);
+      applyRawDamage(fromPi, back);
+    }
+  }
+  return real;
+}
+
+/* 代价伤害：无视护盾/免疫/屏障/反伤，但触发复活 */
+function dealCost(pi, dmg){
+  if(dmg <= 0) return 0;
+  log(`<span class="dmg">🎲 代价伤害：${players[pi].name} 承受 ${dmg} 点（不受护盾/免疫/反伤保护）</span>`);
+  return applyRawDamage(pi, dmg);
+}
+
+/* ==================================================================
+   核心出牌
+================================================================== */
+function playCard(pi, card){
+  if(!state || state.over || state.turn !== pi) return;
+  const p = players[pi];
+  if(!canPlay(pi, card)){
+    if(p.lockTurns > 0 && card.type === 'func') toast('被【封锁牌】限制，本回合只能出一般卡');
+    else if(p.sealSuitTurns > 0 && p.sealSuit && card.suit === p.sealSuit) toast('该花色被封锁，无法打出');
+    else toast('属性不克制，无法打出！');
+    return;
+  }
+  if(state.handoff) return;
+
+  const idx = p.hand.findIndex(c=>c.id === card.id);
+  if(idx < 0) return;
+  p.hand.splice(idx,1);
+  seenIds.delete(card.id);
+  if(p.isAI) state.aiSteps++;
+
+  if(card.type === 'func'){
+    log(`<span class="hl">${p.name} 打出功能牌【${FUNC_DEFS[card.kind].name}】</span>`);
+    const isAsync = applyFunc(pi, card);
+    render();
+    if(!isAsync) afterAction();
+    return;
+  }
+
+  playNormal(pi, card);
+  render();
+  afterAction();
+}
+
+function playNormal(pi, card){
+  const p = players[pi];
+
+  if(p.gambleBuff > 0){
+    card.bonusAtk = (card.bonusAtk||0) + p.gambleBuff;
+    log(`<span class="fx">🎲 赌注加成生效：这张牌的骰子加成 +${p.gambleBuff}</span>`);
+    p.gambleBuff = 0;
+  }
+
+  p.lastPlayed = card;
+
+  if(state.phase === 'counter' && state.field){
+    const fOwner = state.fieldOwner, fCard = state.field, op = players[fOwner];
+    const incoming = effAtk(op, fCard);
+    const myDef = resolveDef(p, card, state.fieldPierce);
+    let dmg = Math.max(0, incoming - myDef);
+    const overflow = Math.max(0, myDef - incoming);
+
+    log(`${p.name} 打出【${ATTR_ICON[card.attr]}${ATTR_NAME[card.attr]} ⚔${effAtk(p,card)} 🛡${myDef}】`
+      + ` 克制 ${op.name} 的【${ATTR_ICON[fCard.attr]}${ATTR_NAME[fCard.attr]}】`);
+    if(state.fieldPierce>0) log(`🗡️ 穿透生效：无视对方防御 ${state.fieldPierce*50}%`);
+    if(p.shatterStacks>0) log(`🔨 削防生效：防御减半×${p.shatterStacks}`);
+
+    if(state.breakerActive){
+      dmg = incoming;
+      log(`⚡ 破盾生效：本次伤害无视防御`);
+      state.breakerActive = false;
+    }
+    log(dmg>0 ? `防御结算：⚔${incoming} − 🛡${myDef} = <span class="dmg">${dmg} 点伤害</span>`
+              : `防御结算：⚔${incoming} − 🛡${myDef} → <span class="heal">完全格挡，防御溢出 ${overflow}</span>`);
+
+    p.shatterStacks = 0;
+    state.field = card; state.fieldOwner = pi;
+    state.fieldPierce = p.pierceStacks; p.pierceStacks = 0;
+    queueFx(()=>{ if(A('animPlay')) retrigger($('#field .card'), 'landed', 520); });
+
+    dealAttack(pi, dmg, fOwner);
+
+    state.passCount = 0;
+    endTurn(1-pi);
+    state.phase = 'counter';
+  }else{
+    log(`${p.name} 自由打出【${ATTR_ICON[card.attr]}${ATTR_NAME[card.attr]} ⚔${effAtk(p,card)} 🛡${effDef(p,card)}】（本手不结算伤害）`);
+    state.field = card; state.fieldOwner = pi;
+    state.fieldPierce = p.pierceStacks; p.pierceStacks = 0;
+    queueFx(()=>{ if(A('animPlay')) retrigger($('#field .card'), 'landed', 520); });
+    state.passCount = 0;
+    endTurn(1-pi);
+    state.phase = 'counter';
+  }
+}
+
+/* ==================================================================
+   功能牌效果
+   （返回 true 表示异步，由选择器回调负责 afterAction）
+================================================================== */
+function applyFunc(pi, card){
+  const p = players[pi], op = players[1-pi];
+  const k = card.kind;
+  let isAsync = false;
+  state.passCount = 0;
+
+  switch(k){
+    case 'reverse': {
+      if(p.lastPlayed){
+        state.field = p.lastPlayed; state.fieldOwner = pi; state.fieldPierce = 0;
+        endTurn(1-pi); state.phase = 'counter';
+        log(`🔁 反转！${op.name} 必须出牌防御 ${p.name} 的【${ATTR_ICON[p.lastPlayed.attr]}${ATTR_NAME[p.lastPlayed.attr]}】`);
+      }else{
+        state.field = null; state.fieldOwner = null; state.fieldPierce = 0;
+        endTurn(1-pi); state.phase = 'free';
+        log(`🔁 反转！${op.name} 任意出牌`);
+      }
+      break;
+    }
+    case 'reset': {
+      const n = p.hand.length;
+      p.hand.forEach(c=>seenIds.delete(c.id));
+      p.hand = [];
+      const got = drawInto(p, INIT_HAND);
+      log(`♻️ ${p.name} 弃掉 ${n} 张手牌，重新抽取 ${got} 张`);
+      break;
+    }
+    case 'recover': {
+      const v = randNormal(50,20,1,100);
+      const before = p.hp;
+      p.hp = Math.min(p.maxHp, p.hp + v);
+      const real = p.hp - before;
+      log(`<span class="heal">➕ ${p.name} 恢复 ${real} 点生命（${before} → ${p.hp}）</span>`);
+      queueFx(()=>fxHeal(pi, real));
+      break;
+    }
+    case 'enhance': {
+      p.atkMult *= 2;
+      log(`<span class="hl">⚔️ ${p.name} 所有卡牌攻击力翻倍 → ×${p.atkMult}</span>`);
+      queueFx(()=>{ if(A('animFunc')) fxBuffOnInfo(pi,'⚔️','攻击翻倍！','buffAtk'); });
+      break;
+    }
+    case 'harden': {
+      p.defMult *= 2;
+      log(`<span class="hl">🛡️ ${p.name} 所有卡牌防御力翻倍 → ×${p.defMult}</span>`);
+      queueFx(()=>{ if(A('animFunc')) fxBuffOnInfo(pi,'🛡️','防御翻倍！','buffDef'); });
+      break;
+    }
+    case 'shield': {
+      p.shield = true;
+      log(`<span class="hl">💠 ${p.name} 获得护盾，下一次受到的伤害将被抵消</span>`);
+      break;
+    }
+    case 'invert': {
+      state.inverted = !state.inverted;
+      log(`<span class="hl">🔀 克制关系${state.inverted?'已颠倒（石头克布 / 布克剪刀 / 剪刀克石头）':'已恢复正常'}</span>`);
+      break;
+    }
+    case 'steal': {
+      if(op.hand.length > 0){
+        const i = rnd(op.hand.length);
+        const st = op.hand.splice(i,1)[0];
+        p.hand.push(st);
+        log(`🎴 ${p.name} 从 ${op.name} 手中夺取了一张牌`);
+      }else log(`${op.name} 没有手牌可以被夺取`);
+      break;
+    }
+    case 'pierce': {
+      p.pierceStacks++;
+      log(`<span class="hl">🗡️ ${p.name} 下一张一般卡将无视对方防御 ${p.pierceStacks*50}%</span>`);
+      break;
+    }
+    case 'shatter': {
+      op.shatterStacks++;
+      log(`<span class="hl">🔨 ${op.name} 下一张用于防御的牌防御减半（叠加 ${op.shatterStacks} 层）</span>`);
+      break;
+    }
+    case 'breaker': {
+      const had = op.shield;
+      op.shield = false;
+      state.breakerActive = true;
+      log(`<span class="hl">⚡ ${p.name} 破盾！${had?'移除了对方的护盾，':'（对方无护盾）'}本次伤害将无法被盾抵挡</span>`);
+      break;
+    }
+    case 'raid': {
+      const had = state.field;
+      state.field = null; state.fieldOwner = null; state.fieldPierce = 0;
+      state.phase = 'free';
+      log(`<span class="hl">🚀 ${p.name} 突袭！${had?'清空了场上牌，':''}立即进入自由出牌回合</span>`);
+      break;
+    }
+    case 'reflect': {
+      p.reflectTurns = Math.max(p.reflectTurns, 3);
+      log(`<span class="hl">🪞 ${p.name} 获得反伤，3 回合内受到的伤害 50% 反弹</span>`);
+      break;
+    }
+    case 'immune': {
+      p.immune = true;
+      log(`<span class="hl">🧿 ${p.name} 本回合免疫一切伤害与负面效果</span>`);
+      break;
+    }
+    case 'barrier': {
+      p.barrier += 80;
+      log(`<span class="hl">🧱 ${p.name} 获得屏障，可吸收 80 点伤害（当前 ${p.barrier}）</span>`);
+      break;
+    }
+    case 'draw3': {
+      const got = drawInto(p, 3);
+      log(`🃏 ${p.name} 抽取了 ${got} 张牌${got<3?'（受手牌上限限制）':''}（当前 ${p.hand.length} 张）`);
+      break;
+    }
+    case 'copy': {
+      const pool = p.hand.filter(c=>!(c.type==='func' && c.kind==='copy'));
+      if(pool.length === 0){ log(`${p.name} 没有可复制的牌`); break; }
+      if(p.isAI){
+        applyCopy(pi, aiPickCopyPool(pool));
+      }else{
+        isAsync = true;
+        openPicker({
+          title:'📑 复制牌', owner:p, cards:pool,
+          hint:'选择一张手牌进行复制（<b>复制牌本体不可被复制</b>，其余包括复制品与复活牌均可）',
+          cancelText:'放弃复制',
+          onPick:(c)=>{ applyCopy(pi, c); afterAction(); },
+          onCancel:()=>afterAction()
+        });
+      }
+      break;
+    }
+    case 'shuffle': {
+      const n = p.hand.length;
+      p.hand.forEach(c=>seenIds.delete(c.id));
+      p.hand = [];
+      const got = drawInto(p, n);
+      log(`🌪️ ${p.name} 把 ${n} 张手牌洗回牌库，重抽 ${got} 张`);
+      break;
+    }
+    case 'recruit': {
+      const tmp = [];
+      for(let i=0;i<3;i++) tmp.push(drawCard());
+      if(p.isAI){
+        const best = aiPickBest(tmp);
+        applyRecruit(pi, best, tmp.filter(x=>x.id!==best.id));
+      }else{
+        isAsync = true;
+        openPicker({
+          title:'📦 征召牌', owner:p, cards:tmp,
+          hint:'从这 3 张中选 1 张入手，其余弃掉',
+          cancelText:'全部弃掉',
+          onPick:(c)=>{ applyRecruit(pi, c, tmp.filter(x=>x.id!==c.id)); afterAction(); },
+          onCancel:()=>{ log(`📦 ${p.name} 放弃了征召`); afterAction(); }
+        });
+      }
+      break;
+    }
+    case 'peek': {
+      state.peekTurn = state.turn;
+      log(`<span class="hl">👁️ ${p.name} 窥视了对方的手牌，本回合持续可见</span>`);
+      break;
+    }
+    case 'swapAttr': {
+      const normals = p.hand.filter(c=>c.type==='normal');
+      if(normals.length === 0){ log(`${p.name} 没有可调换属性的一般卡`); break; }
+      if(p.isAI){
+        const req = (state.phase==='counter' && state.field)
+          ? requiredAttr(state.inverted, state.field.attr) : null;
+        let t = normals[0];
+        if(req){ const bad = normals.find(c=>c.attr !== req); if(bad) t = bad; }
+        applySwap(pi, t, req || ATTRS[rnd(3)]);
+      }else{
+        isAsync = true;
+        openPicker({
+          title:'🔄 调换牌 · 选择卡牌', owner:p, cards:normals,
+          hint:'选择一张要改变属性的一般卡',
+          cancelText:'取消',
+          onPick:(c)=>{
+            openPicker({
+              title:'🔄 调换牌 · 选择属性',
+              hint:`把【${ATTR_NAME[c.attr]}】改为：`,
+              buttons: ATTRS.map(a=>({icon:ATTR_ICON[a], label:ATTR_NAME[a], attr:a})),
+              cancelText:'取消',
+              onPickButton:(b)=>{ applySwap(pi, c, b.attr); afterAction(); },
+              onCancel:()=>afterAction()
+            });
+          },
+          onCancel:()=>afterAction()
+        });
+      }
+      break;
+    }
+    case 'sealSuit': {
+      if(p.isAI){ applySeal(pi, SUITS[rnd(4)]); }
+      else{
+        isAsync = true;
+        openPicker({
+          title:'🚫 封色牌',
+          hint:'选择要封锁对方的花色（对方 2 回合内不能打出该花色）',
+          buttons: SUITS.map(s=>({icon:s, label:'花色 '+s, suit:s})),
+          cancelText:'取消',
+          onPickButton:(b)=>{ applySeal(pi, b.suit); afterAction(); },
+          onCancel:()=>afterAction()
+        });
+      }
+      break;
+    }
+    case 'bait': {
+      state.baitArmed = true;
+      log(`<span class="hl">🪤 ${p.name} 布下诱饵：对方下一次放弃防御将受到 200% 伤害</span>`);
+      break;
+    }
+    case 'lock': {
+      op.lockTurns = 1;
+      log(`<span class="hl">⛓️ ${op.name} 下一回合只能打出一般卡</span>`);
+      break;
+    }
+    case 'gamble': {
+      const X = randNormal(50,20,0,100);
+      if(Math.random() < 0.5){
+        log(`<span class="hl">🎲 赌注牌 → 扣血分支（X=${X}）</span>`);
+        dealCost(pi, X);
+      }else{
+        p.gambleBuff += X;
+        log(`<span class="hl">🎲 赌注牌 → 提攻分支：下一张一般卡攻击 +${X}（累计 +${p.gambleBuff}）</span>`);
+      }
+      break;
+    }
+    case 'exchange': {
+      const a = p.hand, b = op.hand;
+      p.hand = b; op.hand = a;
+      log(`<span class="hl">🤝 ${p.name} 与 ${op.name} 交换了全部手牌（互得 ${p.hand.length} / ${op.hand.length} 张）</span>`);
+      if(state.phase === 'counter' && state.field)
+        log(`（处于防御回合，${p.name} 仍需打出克制场上牌的卡）`);
+      break;
+    }
+    case 'revive': {
+      log(`${p.name} 持有复活牌（被动，血量归零时自动触发）`);
+      break;
+    }
+  }
+
+  // 同步类功能牌的通用触发特效（窥视也走这里）
+  if(!['revive','copy','recruit','swapAttr','sealSuit','exchange'].includes(k))
+    queueFx(()=>fxRecolor(pi, k));
+
+  return isAsync;
+}
+
+/* ---- 功能牌子效果 ---- */
+function drawInto(p, n){
+  let got = 0;
+  for(let i=0;i<n;i++){
+    if(p.hand.length >= handLimit(p)) break;
+    p.hand.push(drawCard());
+    got++;
+  }
+  return got;
+}
+function applyCopy(pi, target){
+  const p = players[pi];
+  const nc = Object.assign({}, target, { id:++uid, isCopy:true });
+  if(nc.type === 'normal' && nc.bonusAtk === undefined) nc.bonusAtk = 0;
+  p.hand.push(nc);
+  const nm = target.type==='func' ? FUNC_DEFS[target.kind].name
+    : `【${ATTR_ICON[target.attr]}${ATTR_NAME[target.attr]}】`;
+  log(`<span class="fx">📑 ${p.name} 复制了 ${nm}${target.isCopy?'（复制品）':''}</span>`);
+}
+function applyRecruit(pi, chosen, rest){
+  const p = players[pi];
+  p.hand.push(chosen);
+  const nm = chosen.type==='func' ? FUNC_DEFS[chosen.kind].name
+    : `【${ATTR_ICON[chosen.attr]}${ATTR_NAME[chosen.attr]} ⚔${chosen.atk} 🛡${chosen.def}】`;
+  log(`📦 ${p.name} 征召入手 ${nm}，其余 ${rest.length} 张弃掉`);
+}
+function applySwap(pi, card, attr){
+  const p = players[pi];
+  const old = card.attr;
+  card.attr = attr;
+  log(`<span class="fx">🔄 ${p.name} 把一张卡的属性由【${ATTR_NAME[old]}】改为【${ATTR_NAME[attr]}】</span>`);
+}
+function applySeal(pi, suit){
+  const op = players[1-pi];
+  op.sealSuit = suit; op.sealSuitTurns = 2;
+  log(`<span class="hl">🚫 ${players[pi].name} 封锁了 ${op.name} 的 ${suit} 花色（2 回合）</span>`);
+}
+
+/* ==================================================================
+   放弃防御 / 弃牌
+================================================================== */
+function giveUp(){
+  if(!state || state.over || state.handoff) return;
+  if(state.phase !== 'counter' || !state.field) return;
+  const pi = state.turn, p = players[pi];
+  const owner = players[state.fieldOwner];
+  const atk = effAtk(owner, state.field);
+  const mult = state.baitArmed ? 2 : 1;
+  if(mult === 2) log(`<span class="hl">🪤 诱饵陷阱触发！伤害翻倍至 200%</span>`);
+  log(`<span class="hl">${p.name} 放弃防御！</span> 受到 ${owner.name} 场上牌【${ATTR_NAME[state.field.attr]}】攻击的 ${mult*100}% → ${atk*mult} 点`);
+
+  if(A('animDamage')){
+    const fromEl = $('#field .card') || $('.board');
+    const toEl = infoEl(pi);
+    if(fromEl && toEl) queueFx(()=>fxBeam(fromEl, toEl, '#ff4d6d', ()=>{
+      const el = infoEl(pi); if(el) retrigger(el,'hit',600);
+    }));
+  }
+
+  state.baitArmed = false;
+  dealAttack(pi, atk*mult, state.fieldOwner);
+  state.field = null; state.fieldOwner = null; state.fieldPierce = 0;
+  state.phase = 'free';
+  render();
+  afterAction();
+}
+
+function enterDiscard(){ if(state.handoff || state.over) return; discardMode = true; discardSel.clear(); render(); }
+function cancelDiscard(){ discardMode = false; discardSel.clear(); render(); }
+function toggleDiscardSelect(id){ discardSel.has(id) ? discardSel.delete(id) : discardSel.add(id); render(); }
+function confirmDiscard(){
+  if(!discardMode) return;
+  const pi = state.turn, p = players[pi];
+  const sel = p.hand.filter(c=>discardSel.has(c.id));
+  if(sel.length === 0){ toast('请先选择要弃掉的牌'); return; }
+
+  const zone = handEl(pi);
+  const els = zone ? Array.from(zone.querySelectorAll('.card.sel')) : [];
+
+  const doIt = ()=>{
+    p.hand = p.hand.filter(c=>!discardSel.has(c.id));
+    sel.forEach(c=>seenIds.delete(c.id));
+    log(`${p.name} 弃掉了 ${sel.length} 张牌`);
+    discardMode = false; discardSel.clear();
+    if(state.phase === 'counter' && state.field && !state.over){
+      const owner = players[state.fieldOwner];
+      const atk = effAtk(owner, state.field);
+      const mult = state.baitArmed ? 2 : 1;
+      if(mult===2) log(`<span class="hl">🪤 诱饵陷阱触发！伤害翻倍至 200%</span>`);
+      log(`<span class="hl">弃牌后自动放弃防御</span>，${p.name} 受到 ${atk*mult} 点伤害`);
+      state.baitArmed = false;
+      dealAttack(pi, atk*mult, state.fieldOwner);
+      state.field = null; state.fieldOwner = null; state.fieldPierce = 0;
+      state.phase = 'free';
+    }
+    render();
+    afterAction();
+  };
+
+  if(A('animDiscard') && els.length){
+    els.forEach((e,i)=>{
+      e.style.transition = 'transform .4s cubic-bezier(.5,0,.9,.6), opacity .4s';
+      setTimeout(()=>{
+        e.style.transform = `translate(${rnd(90)-45}px, ${110+rnd(70)}px) rotate(${rnd(70)-35}deg)`;
+        e.style.opacity = '0';
+      }, i*30);
+    });
+    setTimeout(doIt, 300 + els.length*30 + 120);
+  }else doIt();
+}
+
+/* ==================================================================
+   回合收尾
+================================================================== */
+function refill(pi){
+  const p = players[pi];
+  if(p.hp <= 0) return;
+  if(p.hand.length < 3){
+    const got = drawInto(p, 5);
+    log(`🃏 ${p.name} 手牌不足3张，补充 ${got} 张（当前 ${p.hand.length} 张）`);
+  }
+}
+
+function afterAction(){
+  if(!state) return;
+
+  if(state.over){
+    refill(0); refill(1);
+    render();
+    setTimeout(showGameOver, A('animDamage') ? 700 : 150);
+    return;
+  }
+  refill(0); refill(1);
+
+  if(discardMode && (players[state.turn].isAI || state.handoff)){
+    discardMode = false; discardSel.clear();
+  }
+
+  render();
+  maybeAI();
+}
+
+function showGameOver(){
+  if(!state || !state.over) return;
+  const t = document.getElementById('goTitle');
+  if(state.winner === null){
+    t.textContent = '⚖️ 平局';
+  }else if(state.mode === 'ai'){
+    t.textContent = (state.winner === 0) ? '🎉 你赢了！' : '💀 你输了…';
+  }else{
+    t.textContent = `🎉 ${players[state.winner].name} 获胜！`;
+  }
+  document.getElementById('gameover').classList.remove('hidden');
+}
+
+/* ==================================================================
+   出牌请求（飞行动画）
+================================================================== */
+function requestPlay(pi, card, depth){
+  depth = depth || 0;
+  if(!state || state.over) return;
+  if(state.handoff && pi !== state.turn) return;
+  if(state.animLock){ if(depth < 60) setTimeout(()=>requestPlay(pi,card,depth+1), 90); return; }
+  if(!A('animPlay') || !players[pi].hand.some(c=>c.id===card.id)){ playCard(pi, card); return; }
+
+  const zone = handEl(pi);
+  let srcEl = zone ? zone.querySelector(`.card[data-id="${card.id}"]`) : null;
+  const hidden = !srcEl;
+  if(!srcEl) srcEl = zone ? (zone.querySelector('.card.back') || zone) : document.querySelector('.board');
+  if(!srcEl){ playCard(pi, card); return; }
+
+  const boardEl = document.querySelector('.board') || document.getElementById('field');
+  const dst = rectOf(boardEl), src = rectOf(srcEl);
+  state.animLock = true;
+
+  let node;
+  if(hidden){
+    node = document.createElement('div');
+    node.className = 'card back fxcard';
+    node.style.width = Math.min(src.w,60)+'px';
+    node.style.height = Math.min(src.h,84)+'px';
+  }else{
+    const tmp = document.createElement('div');
+    tmp.innerHTML = cardHTML(card, players[pi], '', null);
+    node = tmp.firstElementChild;
+    node.classList.add('fxcard');
+    node.style.width = src.w+'px'; node.style.height = src.h+'px';
+    srcEl.style.opacity = '.28';
+  }
+  node.style.left = src.x+'px'; node.style.top = src.y+'px';
+  node.style.transform = 'translate(-50%,-50%) scale(1) rotate(0deg)';
+  fxLayer().appendChild(node);
+
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    node.style.transform = `translate(${dst.x-src.x}px, ${dst.y-src.y}px) scale(1.18) rotate(${rnd(14)-7}deg)`;
+  }));
+
+  setTimeout(()=>{
+    node.style.opacity = '0';
+    setTimeout(()=>node.remove(), 220);
+    state.animLock = false;
+    playCard(pi, card);
+  }, 300);
+}
+
+/* ==================================================================
+   AI
+================================================================== */
+function cardValue(c){
+  if(c.type === 'func'){
+    return c.kind === 'revive' ? 30 : (c.kind === 'enhance' ? 22 : 12);
+  }
+  return c.atk * 1.1 + c.def * 0.8;
+}
+function aiPickBest(arr){
+  let best = arr[0], bs = -1e9;
+  for(const c of arr){
+    const s = cardValue(c);
+    if(s > bs){ bs = s; best = c; }
+  }
+  return best;
+}
+function aiPickCopyPool(pool){
+  const rv = pool.find(c=>c.type==='func' && c.kind==='revive');
+  if(rv) return rv;
+  return aiPickBest(pool);
+}
+
+function maybeAI(){
+  clearTimeout(aiTimer);
+  if(!state || state.over) return;
+  if(state.mode !== 'ai') return;
+  if(!players[state.turn].isAI) return;
+  if(state.handoff) return;
+  aiTimer = setTimeout(aiAct, 880);
+}
+
+/* 无法出牌时的过牌（防死循环） */
+function aiPass(){
+  const pi = state.turn, p = players[pi];
+  state.passCount = (state.passCount||0) + 1;
+  log(`${p.name} 没有可打出的牌，过牌`);
+
+  if(state.passCount >= MAX_PASS){
+    state.over = true;
+    state.winner = players[0].hp === players[1].hp
+      ? null : (players[0].hp > players[1].hp ? 0 : 1);
+    log(`<span class="hl">双方连续 ${MAX_PASS} 次过牌，对局结束</span>`);
+    render();
+    setTimeout(showGameOver, 400);
+    return;
+  }
+  state.field = null; state.fieldOwner = null; state.fieldPierce = 0;
+  state.phase = 'free';
+  endTurn(1-pi);
+  render();
+  maybeAI();
+}
+
+function aiAct(){
+  if(!state || state.over) return;
+  const pi = state.turn, p = players[pi];
+  if(!p.isAI) return;
+  const op = players[1-pi];
+  const tbl = counterTable(state.inverted);
+  const MAX_STEPS = 8;
+
+  /* ---- 防御回合 ---- */
+  if(state.phase === 'counter' && state.field){
+    const fAttr = state.field.attr;
+    const incoming = effAtk(op, state.field);
+    const valid = p.hand.filter(c=>c.type==='normal' && tbl[c.attr]===fAttr && canPlay(pi, c));
+
+    if(state.aiSteps < MAX_STEPS){
+      const pick = (kind, cond) => {
+        const c = p.hand.find(x=>x.type==='func' && x.kind===kind && canPlay(pi,x));
+        return (c && (cond===undefined || cond)) ? c : null;
+      };
+      let c;
+      if((c = pick('harden', p.defMult === 1 && incoming > 45 && Math.random() < 0.55))){ requestPlay(pi,c); return; }
+      if((c = pick('immune', p.hp < 220 && incoming > 60))){ requestPlay(pi,c); return; }
+      if((c = pick('barrier', p.hp < 300 && incoming > 60))){ requestPlay(pi,c); return; }
+      if((c = pick('enhance', p.atkMult === 1 && Math.random() < 0.4))){ requestPlay(pi,c); return; }
+    }
+
+    if(valid.length){
+      let best = valid[0], bs = -1e9;
+      for(const c of valid){
+        const myDef = resolveDef(p, c, state.fieldPierce);
+        const take = Math.max(0, incoming - myDef);
+        const sc = -take*1.9 + effAtk(p,c)*0.55 + effDef(p,c)*0.25;
+        if(sc > bs){ bs = sc; best = c; }
+      }
+      requestPlay(pi, best); return;
+    }
+
+    if(state.aiSteps < MAX_STEPS){
+      const pick = (kind, cond) => {
+        const c = p.hand.find(x=>x.type==='func' && x.kind===kind && canPlay(pi,x));
+        return (c && (cond===undefined || cond)) ? c : null;
+      };
+      let c;
+      if((c = pick('shield'))){ requestPlay(pi,c); return; }
+      if((c = pick('immune', p.hp < 340))){ requestPlay(pi,c); return; }
+      if((c = pick('barrier', p.hp < 400))){ requestPlay(pi,c); return; }
+      if((c = pick('reverse', p.lastPlayed && effAtk(p,p.lastPlayed) > 35))){ requestPlay(pi,c); return; }
+      if((c = pick('invert'))){
+        const t2 = counterTable(!state.inverted);
+        if(p.hand.some(x=>x.type==='normal' && t2[x.attr]===fAttr)){ requestPlay(pi,c); return; }
+      }
+      if((c = pick('swapAttr'))){
+        const n = p.hand.filter(x=>x.type==='normal');
+        if(n.length){ requestPlay(pi,c); return; }
+      }
+      if((c = pick('recruit'))){ requestPlay(pi,c); return; }
+      if((c = pick('draw3'))){ requestPlay(pi,c); return; }
+      if((c = pick('steal', op.hand.length > 3))){ requestPlay(pi,c); return; }
+      if((c = pick('reset', p.hand.length < 6 && Math.random() < 0.7))){ requestPlay(pi,c); return; }
+      if((c = pick('shuffle', Math.random() < 0.5))){ requestPlay(pi,c); return; }
+      if((c = pick('recover', p.hp < 430))){ requestPlay(pi,c); return; }
+    }
+    giveUp(); return;
+  }
+
+  /* ---- 自由回合 ---- */
+  if(state.aiSteps < MAX_STEPS){
+    const pick = (kind, cond) => {
+      const c = p.hand.find(x=>x.type==='func' && x.kind===kind && canPlay(pi,x));
+      return (c && (cond===undefined || cond)) ? c : null;
+    };
+    let c;
+    if((c = pick('recover', p.hp < 340 && Math.random() < 0.9))){ requestPlay(pi,c); return; }
+    if((c = pick('enhance', p.atkMult < 2))){ requestPlay(pi,c); return; }
+    if((c = pick('harden', p.defMult < 2 && Math.random() < 0.7))){ requestPlay(pi,c); return; }
+    if((c = pick('pierce', Math.random() < 0.7))){ requestPlay(pi,c); return; }
+    if((c = pick('shatter', Math.random() < 0.6))){ requestPlay(pi,c); return; }
+    if((c = pick('breaker', op.shield))){ requestPlay(pi,c); return; }
+    if((c = pick('barrier', p.hp < 340 && Math.random() < 0.7))){ requestPlay(pi,c); return; }
+    if((c = pick('reflect', Math.random() < 0.6))){ requestPlay(pi,c); return; }
+    if((c = pick('lock', op.hand.some(x=>x.type==='func') && Math.random() < 0.7))){ requestPlay(pi,c); return; }
+    if((c = pick('sealSuit', Math.random() < 0.55))){ requestPlay(pi,c); return; }
+    if((c = pick('draw3', p.hand.length < 8))){ requestPlay(pi,c); return; }
+    if((c = pick('recruit', p.hand.length < 8))){ requestPlay(pi,c); return; }
+    if((c = pick('copy', p.hand.length > 0))){ requestPlay(pi,c); return; }
+    if((c = pick('steal', op.hand.length > 4 && Math.random() < 0.7))){ requestPlay(pi,c); return; }
+    if((c = pick('exchange', op.hand.length > p.hand.length + 2))){ requestPlay(pi,c); return; }
+    if((c = pick('raid', state.field && Math.random() < 0.5))){ requestPlay(pi,c); return; }
+    if((c = pick('gamble', p.hp > 320 && Math.random() < 0.5))){ requestPlay(pi,c); return; }
+    // ★ AI 打窥视：仅当对方手牌非空（否则纯浪费，自动跳过）
+    if((c = pick('peek', op.hand.length > 0 && Math.random() < 0.4))){ requestPlay(pi,c); return; }
+    if((c = pick('bait', Math.random() < 0.35))){ requestPlay(pi,c); return; }
+  }
+
+  const normals = p.hand.filter(c=>c.type==='normal' && canPlay(pi,c));
+  if(normals.length){
+    let best = normals[0], bs = -1e9;
+    for(const c of normals){
+      const sc = effAtk(p,c)*1.15 + effDef(p,c)*0.75;
+      if(sc > bs){ bs = sc; best = c; }
+    }
+    requestPlay(pi, best); return;
+  }
+
+  const funcs = p.hand.filter(c=>canPlay(pi,c)
+    && !(c.type==='func' && (c.kind==='copy' || c.kind==='recruit' || c.kind==='swapAttr')));
+  if(funcs.length && state.aiSteps < MAX_STEPS + 4){ requestPlay(pi, funcs[0]); return; }
+
+  // 兜底：真的打不出任何牌 → 过牌
+  aiPass();
+}
+
+/* ==================================================================
+   特效实现
+================================================================== */
+function fxText(x,y,txt,cls){
+  const d = document.createElement('div');
+  d.className = 'fxtext ' + (cls||'');
+  d.textContent = txt; d.style.left = x+'px'; d.style.top = y+'px';
+  fxLayer().appendChild(d);
+  setTimeout(()=>d.remove(), 1200);
+}
+function fxRing(x,y,color,size,delay){
+  const d = document.createElement('div');
+  d.className = 'fxring';
+  d.style.left = x+'px'; d.style.top = y+'px';
+  d.style.width = size+'px'; d.style.height = size+'px';
+  d.style.borderColor = color; d.style.animationDelay = (delay||0)+'ms';
+  fxLayer().appendChild(d);
+  setTimeout(()=>d.remove(), 950+(delay||0));
+}
+function fxIcon(x,y,icon,size,delay){
+  const d = document.createElement('div');
+  d.className = 'fxicon'; d.textContent = icon;
+  d.style.left = x+'px'; d.style.top = y+'px';
+  d.style.fontSize = (size||52)+'px'; d.style.animationDelay = (delay||0)+'ms';
+  fxLayer().appendChild(d);
+  setTimeout(()=>d.remove(), 1150+(delay||0));
+}
+function fxBeam(fromEl,toEl,color,onHit){
+  const a = rectOf(fromEl), b = rectOf(toEl);
+  const dx = b.x-a.x, dy = b.y-a.y;
+  const len = Math.max(20, Math.hypot(dx,dy));
+  const ang = Math.atan2(dy,dx)*180/Math.PI;
+  const d = document.createElement('div');
+  d.className = 'fxbeam';
+  d.style.left = a.x+'px'; d.style.top = (a.y-2.5)+'px';
+  d.style.width = len+'px'; d.style.transformOrigin = 'left center';
+  d.style.transform = `rotate(${ang}deg)`;
+  d.style.background = `linear-gradient(90deg,transparent,${color},#fff)`;
+  d.style.boxShadow = `0 0 18px ${color}`;
+  fxLayer().appendChild(d);
+  setTimeout(()=>{ if(onHit) onHit(); d.remove(); }, 260);
+}
+function fxDamage(pi, dmg){
+  if(!A('animDamage')) return;
+  const el = infoEl(pi);
+  const game = document.getElementById('game');
+  if(game) retrigger(game,'shake',460);
+  if(!el) return;
+  const c = rectOf(el);
+  retrigger(el,'hit',620);
+  fxRing(c.x,c.y,'#ff4d6d',110);
+  fxText(c.x,c.y-4,'-'+dmg,'dmg big');
+}
+function fxHeal(pi, amount){
+  if(!A('animDamage')) return;
+  const el = infoEl(pi); if(!el) return;
+  const c = rectOf(el);
+  retrigger(el,'healed',620);
+  fxRing(c.x,c.y,'#3ef0a0',110);
+  if(amount>0) fxText(c.x,c.y-4,'+'+amount,'heal big');
+  for(let i=0;i<9;i++){
+    const s = document.createElement('div');
+    s.className = 'fxplus'; s.textContent = '+';
+    s.style.left = (c.x + rnd(Math.max(60,Math.round(c.w))) - c.w/2)+'px';
+    s.style.top = (c.y + rnd(30) - 15)+'px';
+    s.style.animationDelay = (i*45)+'ms';
+    fxLayer().appendChild(s);
+    setTimeout(()=>s.remove(), 1500+i*45);
+  }
+}
+function fxBuffOnInfo(pi, icon, txt, cls){
+  const el = infoEl(pi); if(!el) return;
+  const c = rectOf(el);
+  retrigger(el, cls, 720);
+  fxIcon(c.x, c.y-40, icon, 44, 100);
+  fxText(c.x, c.y-68, txt, 'heal mid');
+}
+function fxRevive(pi){
+  const el = infoEl(pi) || document.querySelector('.board');
+  const c = rectOf(el);
+  const hue = document.createElement('div');
+  hue.className = 'fxhue'; document.body.appendChild(hue);
+  setTimeout(()=>hue.remove(), 900);
+  for(let i=0;i<5;i++) fxRing(c.x, c.y, '#ffd964', 100+i*46, i*110);
+  fxIcon(c.x, c.y, '🕊️', 78);
+  fxText(c.x, c.y-70, '复活！', 'heal big');
+  const game = document.getElementById('game');
+  if(game) retrigger(game,'shake',480);
+}
+function fxRecolor(pi, kind){
+  if(!A('animFunc')) return;
+  const el = infoEl(pi), zone = handEl(pi);
+  const board = document.querySelector('.board');
+  const cInfo = rectOf(el || board), cBoard = rectOf(board);
+  const k = kind;
+
+  // 窥视：从对方手牌区扫向自己
+  if(k==='peek'){
+    const from = rectOf(handEl(1-pi)), to = rectOf(handEl(pi));
+    fxBeam({getBoundingClientRect:()=>({left:from.x,top:from.y,width:0,height:0})},
+           {getBoundingClientRect:()=>({left:to.x,top:to.y,width:0,height:0})},
+           '#8fd0ff', ()=>{});
+    fxIcon(to.x, to.y, '👁️', 54, 120);
+    return;
+  }
+
+  if(k==='reverse' || k==='invert'){
+    fxIcon(cBoard.x, cBoard.y, FUNC_DEFS[k].icon, 72);
+    fxRing(cBoard.x, cBoard.y, k==='invert'?'#ff8fd0':'#8fd0ff', 150);
+    fxRing(cBoard.x, cBoard.y, '#8fd0ff', 150, 160);
+    if(k==='invert'){
+      const hue = document.createElement('div');
+      hue.className = 'fxhue'; document.body.appendChild(hue);
+      setTimeout(()=>hue.remove(), 900);
+    }
+    return;
+  }
+  if(k==='reset' || k==='shuffle'){
+    const c = zone ? rectOf(zone) : cInfo;
+    for(let i=0;i<12;i++){
+      const n = document.createElement('div');
+      n.className = 'card back fxcard burst';
+      n.style.width='44px'; n.style.height='62px';
+      n.style.left = c.x+'px'; n.style.top = c.y+'px';
+      n.style.setProperty('--dx',(rnd(720)-360)+'px');
+      n.style.setProperty('--dy',(rnd(460)-300)+'px');
+      n.style.setProperty('--dr',(rnd(900)-450)+'deg');
+      n.style.animationDelay = (i*28)+'ms';
+      fxLayer().appendChild(n);
+      setTimeout(()=>n.remove(), 1100+i*28);
+    }
+    fxRing(c.x, c.y, '#a98bff', 150);
+    return;
+  }
+  if(k==='recover'){
+    fxRing(cInfo.x, cInfo.y, '#3ef0a0', 140);
+    for(let i=0;i<10;i++){
+      const s = document.createElement('div');
+      s.className = 'fxplus'; s.textContent = '✚';
+      s.style.fontSize = (16+rnd(12))+'px';
+      s.style.left = (cInfo.x + rnd(200) - 100)+'px';
+      s.style.top = (cInfo.y + rnd(40) - 10)+'px';
+      s.style.animationDelay = (i*60)+'ms';
+      fxLayer().appendChild(s);
+      setTimeout(()=>s.remove(), 1600+i*60);
+    }
+    return;
+  }
+  if(k==='enhance'){
+    for(let i=0;i<5;i++){
+      const s = document.createElement('div');
+      s.className = 'fxslash';
+      s.style.top = (12+i*17)+'%';
+      s.style.animationDelay = (i*70)+'ms';
+      s.style.height = (4+rnd(5))+'px';
+      fxLayer().appendChild(s);
+      setTimeout(()=>s.remove(), 950+i*70);
+    }
+    return;
+  }
+  if(k==='harden' || k==='barrier'){
+    for(let i=0;i<4;i++) fxRing(cInfo.x, cInfo.y, '#5fd0ff', 90+i*38, i*110);
+    return;
+  }
+  if(k==='shield' || k==='immune'){
+    const w = Math.max(200, cInfo.w+70), h = 96;
+    const b = document.createElement('div');
+    b.className = 'fxshield';
+    b.style.width = w+'px'; b.style.height = h+'px';
+    b.style.left = cInfo.x+'px'; b.style.top = cInfo.y+'px';
+    if(k==='immune') b.style.borderColor = '#b5ff8f';
+    fxLayer().appendChild(b);
+    setTimeout(()=>b.remove(), 1300);
+    return;
+  }
+  if(k==='steal'){
+    const from = rectOf(handEl(1-pi)), to = rectOf(handEl(pi));
+    for(let i=0;i<3;i++){
+      setTimeout(()=>{
+        const n = document.createElement('div');
+        n.className = 'card back fxcard';
+        n.style.width='46px'; n.style.height='64px';
+        n.style.left = from.x+'px'; n.style.top = from.y+'px';
+        n.style.transform = 'translate(-50%,-50%) scale(.8) rotate(-12deg)';
+        fxLayer().appendChild(n);
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          n.style.transform = `translate(${to.x-from.x}px, ${to.y-from.y}px) scale(1.1) rotate(${rnd(24)-12}deg)`;
+        }));
+        setTimeout(()=>{ n.style.opacity='0'; setTimeout(()=>n.remove(),200); }, 420);
+      }, i*130);
+    }
+    return;
+  }
+  if(k==='pierce' || k==='shatter' || k==='breaker' || k==='lock' || k==='sealSuit'){
+    fxIcon(cBoard.x, cBoard.y, FUNC_DEFS[k].icon, 62);
+    fxRing(cBoard.x, cBoard.y, '#ffcf6a', 130);
+    return;
+  }
+  if(k==='raid'){
+    fxIcon(cBoard.x, cBoard.y, '🚀', 70);
+    fxRing(cBoard.x, cBoard.y, '#ff9a5c', 160);
+    const game = document.getElementById('game');
+    if(game) retrigger(game,'shake',420);
+    return;
+  }
+  if(k==='gamble'){
+    fxIcon(cInfo.x, cInfo.y, '🎲', 62);
+    return;
+  }
+  fxIcon(window.innerWidth/2, window.innerHeight/2, FUNC_DEFS[k] ? FUNC_DEFS[k].icon : '✨', 58);
+}
+
+/* ==================================================================
+   点击事件
+================================================================== */
+document.addEventListener('click', function(e){
+  // 选择器：卡牌
+  const pc = e.target.closest('#pickerCards .card');
+  if(pc && pickerState && pickerState.cards){
+    const id = Number(pc.dataset.id);
+    const c = pickerState.cards.find(x=>x.id===id);
+    if(c){
+      const cb = pickerState.onPick;
+      pickerState = null;
+      document.getElementById('picker').classList.add('hidden');
+      cb(c);
+    }
+    return;
+  }
+  // 选择器：按钮
+  const pb = e.target.closest('#pickerCards .attrbtn');
+  if(pb && pickerState && pickerState.buttons){
+    const i = Number(pb.dataset.bi);
+    const b = pickerState.buttons[i];
+    const cb = pickerState.onPickButton;
+    pickerState = null;
+    document.getElementById('picker').classList.add('hidden');
+    if(cb) cb(b);
+    return;
+  }
+  if(pickerOpen()) return;
+
+  // 手牌
+  const cardEl = e.target.closest('.card.normal, .card.func');
+  if(!cardEl) return;
+  const zone = cardEl.closest('.handzone');
+  if(!zone || !zone.dataset.pi) return;
+  if(!state || state.over) return;
+
+  const pi = Number(zone.dataset.pi);
+  if(pi !== state.turn) return;
+  if(players[pi].isAI) return;
+  if(state.handoff) return;
+  if(state.animLock) return;
+
+  const id = Number(cardEl.dataset.id);
+  const card = players[pi].hand.find(c=>c.id===id);
+  if(!card) return;
+
+  if(discardMode && pi === state.turn){ toggleDiscardSelect(id); return; }
+  requestPlay(pi, card);
+});
+
+/* 初始化 */
+(function init(){
+  loadSettings();
+  applyScale();
+  syncSettingsUI();
+})();
+</script>
+</body>
+</html>
