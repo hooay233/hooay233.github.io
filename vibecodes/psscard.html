@@ -105,6 +105,7 @@ body{
 .abtn.danger{border-color:rgba(255,90,110,.6);background:linear-gradient(180deg,rgba(255,70,95,.35),rgba(150,20,45,.3))}
 .abtn.go{border-color:rgba(90,230,160,.6);background:linear-gradient(180deg,rgba(50,220,140,.35),rgba(10,120,70,.3))}
 .abtn:disabled{opacity:.35;cursor:not-allowed}
+.abtn:disabled:hover{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05))}
 
 #log{flex:0 0 auto;height:72px;overflow-y:auto;font-size:11.5px;line-height:1.6;
   padding:6px 12px;border-radius:10px;background:rgba(0,0,0,.35);
@@ -411,6 +412,14 @@ input[type=range]{width:190px;accent-color:#6fa8ff;cursor:pointer}
       <li>若<b>没有克制的牌</b>或<b>主动放弃防御</b>：受到场上牌攻击的 <b>100%</b> 伤害，之后由<b>受伤方自由出牌</b>。</li>
     </ul>
 
+    <h3>四·补 补牌与弃牌</h3>
+    <ul>
+      <li>手牌数量<b>少于 3 张</b>时，自动额外抽取 <b>5 张</b>（受手牌上限限制）。</li>
+      <li><b>弃牌张数不限</b>，一次可以弃掉任意多张；但<b>每回合只能弃牌一次</b>。</li>
+      <li>弃牌后<b>自动放弃防御</b>：若处于防御回合，直接承受场上牌攻击的 <b>100%</b> 伤害，之后由你自由出牌。</li>
+      <li>「每回合」指<b>你这一整个行动回合</b>（期间可能连续打出多张功能牌）；回合交给对方后，下次轮到你时即可再次弃牌。</li>
+    </ul>
+
     <h3>五、伤害通道（实现关键）</h3>
     <table>
       <tr><td><b>受击伤害</b></td><td>对方场牌攻击、放弃防御的100%、诱饵牌200%。依次结算：🧿免疫 → 💠护盾（全额抵消） → 🧱屏障（吸收数值） → 扣血 → 🪞反伤（按实际扣血量反弹50%）</td></tr>
@@ -468,7 +477,7 @@ input[type=range]{width:190px;accent-color:#6fa8ff;cursor:pointer}
     <ul>
       <li><b>面板位置</b>：双人对战时，轮到哪一方出牌，该方的信息面板与手牌即移动到<b>屏幕下方</b>；对手固定在<b>上方</b>。中央横条会明确标明当前回合归属及所在位置。</li>
       <li><b>面板结构</b>：每位玩家的<b>效果徽章独占一行，位于血条上方</b>；血条在下方占满整行宽度。</li>
-      <li><b>状态徽章</b>：攻防倍率、护盾、屏障、反伤回合、穿透/削防层数、封色、封锁、赌注加成、被窥视等，均以徽章实时显示。</li>
+      <li><b>状态徽章</b>：攻防倍率、护盾、屏障、反伤回合、穿透/削防层数、封色、封锁、赌注加成、被窥视、已弃牌等，均以徽章实时显示。</li>
       <li><b>防窥牌</b>：双人对战是否遮挡对方手牌并弹出交接提示。窥视牌<b>不受防窥牌限制</b>，可强制查看对方手牌。</li>
       <li><b>界面缩放</b>：20% ~ 200%。</li>
       <li><b>扣除生命值提示</b>：默认关闭。开启后防御回合卡面显示「-N 血」或「格挡 +N」。</li>
@@ -753,7 +762,8 @@ function startGame(mode){
     reflectTurns:0, immune:false, lockTurns:0,
     sealSuit:null, sealSuitTurns:0,
     pierceStacks:0, shatterStacks:0, gambleBuff:0,
-    lastPlayed:null, dead:false
+    lastPlayed:null, dead:false,
+    discardedThisTurn:false          // ★ 本回合是否已弃牌
   });
   players = [ mk('玩家1', false), mk(mode==='ai'?'电脑':'玩家2', mode==='ai') ];
 
@@ -880,7 +890,7 @@ function closeHandoff(){
 /* ==================================================================
    渲染
 ================================================================== */
-/* ★ 窥视判定必须排在最前，否则会被 AI 隐藏 / 防窥逻辑短路 */
+/* 窥视判定必须排在最前，否则会被 AI 隐藏 / 防窥逻辑短路 */
 function isRevealed(pi){
   const p = players[pi];
 
@@ -931,8 +941,8 @@ function stateBadgesHTML(p, pi){
   if(p.shatterStacks > 0) t.push(bd('🔨 削防×'+p.shatterStacks,'bad'));
   if(p.lockTurns > 0) t.push(bd('⛓️ 封锁 '+p.lockTurns,'bad'));
   if(p.sealSuitTurns > 0) t.push(bd('🚫 封色'+p.sealSuit+' '+p.sealSuitTurns,'bad'));
-  // ★ 被窥视提示
   if(state.peekTurn === state.turn && pi !== state.turn) t.push(bd('👁️ 被窥视中','bad'));
+  if(p.discardedThisTurn) t.push(bd('🗑️ 本回合已弃牌','bad'));
   t.push(bd('🃏 '+p.hand.length+' / '+handLimit(p)));
   return t.join('');
 }
@@ -976,19 +986,20 @@ function renderHandInto(pi, zone){
 
   zone.innerHTML = p.hand.map(c=>{
     let cls = '', hint = null;
-    // 被窥视方的手牌只做展示，不可操作
+    // 被窥视方 / AI 的手牌只做展示，不可操作
     const operable = active && !state.handoff && !pickerOpen() && !p.isAI;
+    const previewable = defending && c.type === 'normal';
+
     if(operable){
       if(discardMode && discardSel.has(c.id)) cls = 'sel';
       else if(!canPlay(pi, c)) cls = 'invalid';
-      else if(defending && c.type === 'normal'){
+      else if(previewable){
         const myDef = resolveDef(p, c, state.fieldPierce);
         const take = Math.max(0, incoming - myDef);
         hint = take > 0 ? {text:'-'+take+' 血', safe:false}
                         : {text:'格挡 +'+(myDef - incoming), safe:true};
       }
-    }else if(active && !state.handoff && !pickerOpen() && defending && c.type === 'normal'){
-      // 窥视 AI 手牌时也给数值提示，便于判断（不可点击）
+    }else if(!p.isAI && active && !state.handoff && !pickerOpen() && previewable){
       const myDef = resolveDef(p, c, state.fieldPierce);
       const take = Math.max(0, incoming - myDef);
       hint = take > 0 ? {text:'-'+take+' 血', safe:false}
@@ -1058,8 +1069,12 @@ function renderActions(){
     if(state.phase === 'counter' && state.field && !discardMode){
       html += `<button class="abtn danger" onclick="giveUp()">🏳️ 放弃防御（100%伤害${state.baitArmed?'→200%':''}）</button>`;
     }
-    if(!discardMode) html += `<button class="abtn" onclick="enterDiscard()">🗑️ 弃牌</button>`;
-    else {
+    if(!discardMode){
+      // ★ 每回合只能弃牌一次
+      html += p.discardedThisTurn
+        ? `<button class="abtn" disabled>🗑️ 本回合已弃牌</button>`
+        : `<button class="abtn" onclick="enterDiscard()">🗑️ 弃牌</button>`;
+    }else{
       html += `<button class="abtn go" onclick="confirmDiscard()">确认弃掉 ${discardSel.size} 张</button>`;
       html += `<button class="abtn" onclick="cancelDiscard()">取消</button>`;
     }
@@ -1120,8 +1135,11 @@ function endTurn(next){
   const outgoing = state.turn;
   tickCounters(outgoing);
   if(state.peekTurn === outgoing) state.peekTurn = -1;   // 窥视随回合结束失效
+
   state.turn = next;
   state.aiSteps = 0;
+  players[next].discardedThisTurn = false;   // ★ 新回合开始，弃牌次数重置
+
   if(state.mode === 'pvp' && SETTINGS.antiPeek && !state.over){
     state.handoff = true;
     const delay = (A('animPlay')||A('animFunc')) ? 720 : 0;
@@ -1559,7 +1577,7 @@ function applyFunc(pi, card){
     }
   }
 
-  // 同步类功能牌的通用触发特效（窥视也走这里）
+  // 同步类功能牌的通用触发特效
   if(!['revive','copy','recruit','swapAttr','sealSuit','exchange'].includes(k))
     queueFx(()=>fxRecolor(pi, k));
 
@@ -1633,9 +1651,16 @@ function giveUp(){
   afterAction();
 }
 
-function enterDiscard(){ if(state.handoff || state.over) return; discardMode = true; discardSel.clear(); render(); }
+/* ★ 每回合只能弃牌一次 */
+function enterDiscard(){
+  if(!state || state.handoff || state.over) return;
+  const p = players[state.turn];
+  if(p.discardedThisTurn){ toast('本回合已经弃过牌了，每回合只能弃牌一次'); return; }
+  discardMode = true; discardSel.clear(); render();
+}
 function cancelDiscard(){ discardMode = false; discardSel.clear(); render(); }
 function toggleDiscardSelect(id){ discardSel.has(id) ? discardSel.delete(id) : discardSel.add(id); render(); }
+
 function confirmDiscard(){
   if(!discardMode) return;
   const pi = state.turn, p = players[pi];
@@ -1648,8 +1673,10 @@ function confirmDiscard(){
   const doIt = ()=>{
     p.hand = p.hand.filter(c=>!discardSel.has(c.id));
     sel.forEach(c=>seenIds.delete(c.id));
-    log(`${p.name} 弃掉了 ${sel.length} 张牌`);
+    p.discardedThisTurn = true;                    // ★ 标记本回合已弃牌
+    log(`${p.name} 弃掉了 ${sel.length} 张牌（本回合不能再弃牌）`);
     discardMode = false; discardSel.clear();
+
     if(state.phase === 'counter' && state.field && !state.over){
       const owner = players[state.fieldOwner];
       const atk = effAtk(owner, state.field);
@@ -1914,7 +1941,7 @@ function aiAct(){
     if((c = pick('exchange', op.hand.length > p.hand.length + 2))){ requestPlay(pi,c); return; }
     if((c = pick('raid', state.field && Math.random() < 0.5))){ requestPlay(pi,c); return; }
     if((c = pick('gamble', p.hp > 320 && Math.random() < 0.5))){ requestPlay(pi,c); return; }
-    // ★ AI 打窥视：仅当对方手牌非空（否则纯浪费，自动跳过）
+    // AI 打窥视：仅当对方手牌非空（否则纯浪费，自动跳过）
     if((c = pick('peek', op.hand.length > 0 && Math.random() < 0.4))){ requestPlay(pi,c); return; }
     if((c = pick('bait', Math.random() < 0.35))){ requestPlay(pi,c); return; }
   }
@@ -1963,6 +1990,21 @@ function fxIcon(x,y,icon,size,delay){
   d.style.fontSize = (size||52)+'px'; d.style.animationDelay = (delay||0)+'ms';
   fxLayer().appendChild(d);
   setTimeout(()=>d.remove(), 1150+(delay||0));
+}
+/* 坐标版光束（窥视用） */
+function fxBeamAt(x1,y1,x2,y2,color){
+  const dx = x2-x1, dy = y2-y1;
+  const len = Math.max(20, Math.hypot(dx,dy));
+  const ang = Math.atan2(dy,dx)*180/Math.PI;
+  const d = document.createElement('div');
+  d.className = 'fxbeam';
+  d.style.left = x1+'px'; d.style.top = (y1-2.5)+'px';
+  d.style.width = len+'px'; d.style.transformOrigin = 'left center';
+  d.style.transform = `rotate(${ang}deg)`;
+  d.style.background = `linear-gradient(90deg,transparent,${color},#fff)`;
+  d.style.boxShadow = `0 0 18px ${color}`;
+  fxLayer().appendChild(d);
+  setTimeout(()=>d.remove(), 600);
 }
 function fxBeam(fromEl,toEl,color,onHit){
   const a = rectOf(fromEl), b = rectOf(toEl);
@@ -2033,12 +2075,10 @@ function fxRecolor(pi, kind){
   const cInfo = rectOf(el || board), cBoard = rectOf(board);
   const k = kind;
 
-  // 窥视：从对方手牌区扫向自己
+  // 窥视：扫描光从对方手牌区指向自己手牌区
   if(k==='peek'){
     const from = rectOf(handEl(1-pi)), to = rectOf(handEl(pi));
-    fxBeam({getBoundingClientRect:()=>({left:from.x,top:from.y,width:0,height:0})},
-           {getBoundingClientRect:()=>({left:to.x,top:to.y,width:0,height:0})},
-           '#8fd0ff', ()=>{});
+    fxBeamAt(from.x, from.y, to.x, to.y, '#8fd0ff');
     fxIcon(to.x, to.y, '👁️', 54, 120);
     return;
   }
