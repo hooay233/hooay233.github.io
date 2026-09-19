@@ -80,7 +80,10 @@ body{
 .turnbar .tslot{color:#93a6cf;font-size:11.5px}
 
 .handzone{display:flex;gap:7px;flex:0 0 auto;overflow-x:auto;overflow-y:visible;
-  padding:14px 8px 8px;justify-content:center;align-items:center;min-height:70px}
+  padding:14px 8px 8px;justify-content:flex-start;align-items:center;min-height:70px}
+/* ★ 空间够时靠 auto 外边距自动居中；空间不够时外边距归零，只向右溢出，左端可完整滚到 */
+.handzone::before,
+.handzone::after{content:'';flex:0 0 0;margin:auto;}
 .handzone.opp{min-height:66px;padding:6px 8px}
 
 .board{flex:1;display:flex;align-items:center;justify-content:center;gap:24px;
