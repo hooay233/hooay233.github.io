@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>你玩什么游戏？· 刻板印象测试</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background-color: #0f0d17;
+    background-image:
+      radial-gradient(circle at 15% 15%, rgba(130, 90, 230, 0.20), transparent 50%),
+      radial-gradient(circle at 85% 85%, rgba(230, 80, 170, 0.16), transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(60, 180, 220, 0.07), transparent 60%);
+    background-attachment: fixed;
+    color: #e8e6f0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 16px 40px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  #app { width: 100%; max-width: 580px; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.38s cubic-bezier(.2,.8,.3,1); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .card {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
+    padding: 28px 22px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  }
+  .card.center { text-align: center; }
+  .logo {
+    font-size: 13px; letter-spacing: 3px; color: #a78bfa;
+    text-transform: uppercase; margin-bottom: 14px; font-weight: 600;
+  }
+  h1 {
+    font-size: 26px; line-height: 1.35; font-weight: 800; margin-bottom: 14px;
+    background: linear-gradient(100deg, #c4b5fd, #f0abfc 55%, #fda4af);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .desc { font-size: 14px; color: #a9a4bd; margin-bottom: 20px; }
+  .warning {
+    font-size: 12.5px; color: #fbbf9d;
+    background: rgba(251, 146, 60, 0.09);
+    border: 1px solid rgba(251, 146, 60, 0.22);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 24px;
+    text-align: left; line-height: 1.65;
+  }
+  .btn-primary {
+    display: block; width: 100%; padding: 15px; font-size: 16px; font-weight: 700;
+    color: #1a1024; background: linear-gradient(100deg, #c4b5fd, #f0abfc);
+    border: none; border-radius: 14px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+    box-shadow: 0 8px 26px rgba(196, 181, 253, 0.28); font-family: inherit;
+  }
+  .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-primary:active { transform: scale(0.98); }
+  .progress-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .progress-bar { flex: 1; height: 6px; background: rgba(255, 255, 255, 0.09); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a78bfa, #f0abfc); border-radius: 99px; transition: width 0.35s cubic-bezier(.2,.8,.3,1); }
+  .progress-text { font-size: 12px; color: #8b86a3; font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
+  .question { font-size: 18.5px; font-weight: 700; line-height: 1.5; margin-bottom: 20px; color: #f2f0fa; }
+  .options { display: flex; flex-direction: column; gap: 11px; }
+  .option {
+    text-align: left; padding: 15px 17px; font-size: 14.5px; line-height: 1.5;
+    color: #ded9ee; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 13px;
+    cursor: pointer; transition: all 0.18s; font-family: inherit;
+    position: relative; overflow: hidden;
+  }
+  .option::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgba(167,139,250,0.16), rgba(240,171,252,0.10));
+    opacity: 0; transition: opacity 0.18s;
+  }
+  .option:hover { border-color: rgba(167, 139, 250, 0.55); color: #fff; transform: translateX(3px); }
+  .option:hover::before { opacity: 1; }
+  .option:active { transform: scale(0.985); }
+  .option span { position: relative; z-index: 1; }
+  .option.multi-selected {
+    border-color: rgba(167, 139, 250, 0.85);
+    background: rgba(167, 139, 250, 0.16);
+    color: #fff;
+  }
+  .option.multi-selected::after {
+    content: "✓"; position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%); color: #c4b5fd; font-weight: 700; font-size: 16px; z-index: 2;
+  }
+  .spinner {
+    width: 52px; height: 52px; margin: 0 auto 22px; border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.10);
+    border-top-color: #c4b5fd; border-right-color: #f0abfc;
+    animation: spin 0.85s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-text { font-size: 16.5px; font-weight: 700; color: #e8e6f0; margin-bottom: 8px; }
+  #loading-sub { font-size: 12.5px; color: #8b86a3; min-height: 19px; }
+  .result-label { font-size: 12px; letter-spacing: 2.5px; color: #8b86a3; text-transform: uppercase; margin-bottom: 12px; }
+  .result-game {
+    font-size: 40px; font-weight: 900; line-height: 1.15; margin-bottom: 6px;
+    background: linear-gradient(100deg, #c4b5fd, #f0abfc 55%, #fda4af);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    word-break: break-all;
+  }
+  .result-sub { font-size: 13px; color: #8b86a3; margin-bottom: 22px; }
+  .stereo-box {
+    text-align: left; background: rgba(167, 139, 250, 0.07);
+    border: 1px solid rgba(167, 139, 250, 0.22); border-radius: 14px;
+    padding: 16px 17px; margin-bottom: 16px;
+  }
+  .stereo-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #c4b5fd; margin-bottom: 9px; }
+  #result-stereo { font-size: 13.5px; line-height: 1.8; color: #cfcade; }
+  .disclaimer {
+    font-size: 11.5px; color: #fbbf9d; background: rgba(251, 146, 60, 0.08);
+    border: 1px solid rgba(251, 146, 60, 0.20); border-radius: 11px;
+    padding: 10px 13px; text-align: left; line-height: 1.65; margin-bottom: 22px;
+  }
+  .achievement-toast {
+    text-align: left; background: linear-gradient(100deg, rgba(250, 204, 21, 0.14), rgba(251, 146, 60, 0.10));
+    border: 1px solid rgba(250, 204, 21, 0.35); border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 16px;
+    animation: popIn 0.5s cubic-bezier(.2,.8,.3,1);
+  }
+  @keyframes popIn { 0% { opacity: 0; transform: scale(0.92); } 60% { transform: scale(1.02); } 100% { opacity: 1; transform: scale(1); } }
+  .ach-label { font-size: 11px; letter-spacing: 2px; color: #fcd34d; font-weight: 700; margin-bottom: 6px; }
+  .ach-name { font-size: 19px; font-weight: 900; color: #fde68a; }
+  .ach-name small { font-size: 12px; font-weight: 500; color: #d4c9a8; margin-left: 6px; }
+  .ach-progress { font-size: 11.5px; color: #a9a4bd; margin-top: 8px; }
+  .ask-text { font-size: 15px; font-weight: 700; color: #f2f0fa; margin-bottom: 14px; }
+  .btn-row { display: flex; gap: 12px; }
+  .btn-row button {
+    flex: 1; padding: 14px; font-size: 15px; font-weight: 700;
+    border-radius: 13px; border: none; cursor: pointer;
+    transition: all 0.18s; font-family: inherit;
+  }
+  #btn-accurate { color: #1a1024; background: linear-gradient(100deg, #c4b5fd, #f0abfc); box-shadow: 0 6px 22px rgba(196, 181, 253, 0.25); }
+  #btn-inaccurate { color: #ded9ee; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.14); }
+  .btn-row button:hover { filter: brightness(1.09); transform: translateY(-1px); }
+  .btn-row button:active { transform: scale(0.97); }
+  .thanks {
+    font-size: 14px; color: #c4b5fd; background: rgba(167, 139, 250, 0.09);
+    border: 1px solid rgba(167, 139, 250, 0.22); border-radius: 12px;
+    padding: 14px; margin-top: 4px; line-height: 1.7;
+  }
+  .btn-secondary {
+    display: block; width: 100%; margin-top: 12px; padding: 13px;
+    font-size: 14px; font-weight: 600; color: #b9b3cd;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 13px; cursor: pointer; transition: all 0.18s; font-family: inherit;
+  }
+  .btn-secondary:hover { background: rgba(255, 255, 255, 0.09); color: #e8e6f0; }
+  .btn-secondary:active { transform: scale(0.98); }
+  .hidden { display: none !important; }
+  .multi-hint { font-size: 12px; color: #8b86a3; margin-bottom: 14px; }
+  .ach-list {
+    text-align: left; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; color: #a9a4bd; line-height: 1.8;
+  }
+  .ach-list b { color: #e8e6f0; }
+  .god-badge {
+    display: inline-block; margin-top: 6px; padding: 4px 12px;
+    background: linear-gradient(100deg, #fbbf24, #f472b6);
+    color: #1a1024; font-weight: 900; font-size: 12px; border-radius: 99px;
+  }
+  .mystery-badge {
+    display: inline-block; margin-top: 6px; padding: 4px 12px;
+    background: linear-gradient(100deg, #a78bfa, #f0abfc);
+    color: #1a1024; font-weight: 900; font-size: 12px; border-radius: 99px;
+  }
+
+  /* ---------- 成就查看弹窗 ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(8, 6, 14, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px; z-index: 999;
+    animation: fadeIn 0.22s;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-content {
+    background: #17141f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 22px 20px;
+    max-width: 500px; width: 100%;
+    max-height: 82vh; overflow-y: auto;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+    animation: modalIn 0.3s cubic-bezier(.2,.8,.3,1);
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.94) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+  }
+  .modal-header h2 {
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(100deg, #fcd34d, #fbbf24);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: #b9b3cd; font-size: 14px; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    transition: all 0.18s; font-family: inherit;
+  }
+  .modal-close:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+  .modal-progress {
+    font-size: 13px; color: #8b86a3; margin-bottom: 16px;
+    text-align: center; line-height: 1.7;
+  }
+  .modal-section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    color: #a78bfa; margin: 4px 0 10px;
+  }
+  .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+  .ach-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 12px 13px; border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s;
+  }
+  .ach-item.unlocked {
+    background: linear-gradient(100deg, rgba(250, 204, 21, 0.12), rgba(251, 146, 60, 0.07));
+    border-color: rgba(250, 204, 21, 0.35);
+  }
+  .ach-item.locked { opacity: 0.5; }
+  .ach-icon { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+  .ach-info { min-width: 0; flex: 1; }
+  .ach-title {
+    font-size: 14px; font-weight: 800; color: #e8e6f0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ach-item.unlocked .ach-title { color: #fde68a; }
+  .ach-game {
+    font-size: 11px; color: #8b86a3; margin-top: 2px;
+    line-height: 1.45;
+  }
+  .ach-item.locked .ach-game {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ach-god-item {
+    grid-column: 1 / -1; margin-bottom: 10px;
+    background: linear-gradient(100deg, rgba(250, 204, 21, 0.18), rgba(244, 114, 182, 0.12));
+    border-color: rgba(250, 204, 21, 0.5);
+  }
+  .ach-god-item .ach-title { font-size: 16px; }
+  .god-emoji { animation: crownFloat 2s ease-in-out infinite; display: inline-block; }
+  @keyframes crownFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+  /* 神秘成就 */
+  .mystery-item.unlocked {
+    background: linear-gradient(100deg, rgba(167, 139, 250, 0.16), rgba(240, 171, 252, 0.10));
+    border-color: rgba(167, 139, 250, 0.5);
+    align-items: flex-start;
+  }
+  .mystery-item.unlocked .ach-title { color: #e9d5ff; white-space: normal; }
+  .mystery-item .ach-title { color: #b9a8e8; }
+  .mystery-item.unlocked .ach-icon { margin-top: 2px; }
+
+  @media (max-width: 400px) {
+    .card { padding: 24px 18px; border-radius: 18px; }
+    h1 { font-size: 23px; }
+    .result-game { font-size: 32px; }
+    .question { font-size: 17px; }
+    .option { font-size: 14px; padding: 14px 15px; }
+    .ach-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 开始页 ============ -->
+  <div id="start-screen" class="screen active">
+    <div class="card">
+      <div class="logo">Stereotype Quiz · 38Q</div>
+      <h1>你玩什么游戏？<br>刻板印象测试</h1>
+      <p class="desc">回答 38 道题，让我们用网络上流传的刻板印象，猜猜你常玩哪款游戏。每测出一款游戏，就解锁一个成就。</p>
+      <div class="warning">
+        ⚠️ 本测试<b>完全基于网络流传的刻板印象</b>制作，充满偏见、夸张与玩梗，<b>不代表任何玩家的真实情况</b>。成就名称均为网络蔑称，仅作玩梗，请勿当真，仅供娱乐。
+      </div>
+      <button class="btn-primary" id="btn-start">开始测试</button>
+      <button class="btn-secondary" id="btn-view-ach-start">🏆 查看我的成就</button>
+    </div>
+  </div>
+
+  <!-- ============ 答题页 ============ -->
+  <div id="quiz-screen" class="screen">
+    <div class="card">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">1 / 38</div>
+      </div>
+      <div class="question" id="question-text"></div>
+      <div class="multi-hint hidden" id="multi-hint">（多选题，可多选，选好后点提交）</div>
+      <div class="options" id="options"></div>
+      <button class="btn-primary hidden" id="btn-submit-multi" style="margin-top:16px;">提交答案</button>
+    </div>
+  </div>
+
+  <!-- ============ 加载页 ============ -->
+  <div id="loading-screen" class="screen">
+    <div class="card center">
+      <div class="spinner"></div>
+      <div id="loading-text">正在分析你的游戏人格……</div>
+      <div id="loading-sub"></div>
+    </div>
+  </div>
+
+  <!-- ============ 结果页 ============ -->
+  <div id="result-screen" class="screen">
+    <div class="card">
+      <div class="result-label">测 试 结 果</div>
+      <div class="result-game" id="result-game"></div>
+      <div class="result-sub" id="result-sub"></div>
+
+      <div class="achievement-toast" id="achievement-toast">
+        <div class="ach-label">🏆 获得成就</div>
+        <div class="ach-name" id="ach-name"></div>
+        <div class="ach-progress" id="ach-progress"></div>
+      </div>
+
+      <div class="stereo-box">
+        <div class="stereo-title">📌 该游戏的刻板印象</div>
+        <p id="result-stereo"></p>
+      </div>
+
+      <div class="disclaimer">
+        ⚠️ 以上内容全部来自网络流传的刻板印象，充满偏见与夸张，仅供娱乐，不代表任何玩家的真实情况。
+      </div>
+
+      <div id="hate-box" class="ach-list hidden"></div>
+
+      <div id="ask-accuracy" class="hidden">
+        <p class="ask-text">这个结果准吗？</p>
+        <div class="btn-row">
+          <button id="btn-accurate">准</button>
+          <button id="btn-inaccurate">不准</button>
+        </div>
+      </div>
+
+      <div id="thanks-text" class="thanks hidden">
+        感谢参与！刻板印象仅供娱乐，请勿当真 😉
+      </div>
+
+      <div id="restart-wrap" class="hidden">
+        <button class="btn-secondary" id="btn-view-ach-result">🏆 查看我的成就</button>
+        <button class="btn-secondary" id="btn-restart">重新测试</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 成就弹窗 ============ -->
+<div id="achievement-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>🏆 成就收集</h2>
+      <button class="modal-close" id="modal-close" aria-label="关闭">✕</button>
+    </div>
+    <div id="achievement-list"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   游戏刻板印象数据
+   ========================================================= */
+const GAMES = {
+  genshin: {
+    name: "原神", sub: "米哈游 · 开放世界",
+    ach: "原批",
+    stereo: "最突出的标签是「原批」。这个贬义称呼被相当一部分人用于指代全体原神玩家，逐渐成为对该群体的刻板印象。另一个核心叙事是「只有两种人，爱米哈游的和想害米哈游的」。此外，「玩原神玩的」已成通用贬损句式。回坑原神被室友说「你染上原神了，你废了」。"
+  },
+  mingchao: {
+    name: "鸣潮", sub: "库洛游戏 · 开放世界",
+    ach: "潮批",
+    stereo: "社区讨论环境常被形容为「诡异」。高难本讨论中存在「打不过就是你菜，别喷游戏」的捂嘴氛围。玩家常被贴上「因原神/崩铁而看清米哈游」的标签，三句不离原神。在性别议题上处境尴尬：贴吧被称「媚女缅北二游」，微博小红书又被称「卖肉低俗媚男缅北二游」。"
+  },
+  starrail: {
+    name: "崩坏：星穹铁道", sub: "米哈游 · 回合制",
+    ach: "铁小鬼",
+    stereo: "最突出的印象是「铁血强度党」。有讨论直接问「能不能说崩铁玩家都是铁血强度党」，回复指出「还在氪金的大部分是强度党，xp党要么退坑要么白嫖」。「铁小鬼」则指用星铁拉踩原神的部分星铁玩家。此外还有「原批轨批，人均孝子」的群体印象。"
+  },
+  arknights: {
+    name: "明日方舟", sub: "鹰角网络 · 塔防",
+    ach: "舟结晶",
+    stereo: "核心标签是「硬核不媚宅」。这句口号曾被用来拉踩其他二游，塑造「手游界的雪之下雪乃」形象。但如今风向反转，该词变成贬义——「谁不媚宅谁被喷」。批评者认为这套叙事本质是让玩家觉得自己「和单机婆罗门是一路人，是高贵的婆罗门」。社区「快乐雪花吧」留下「结晶聚集地」的印象。"
+  },
+  zzz: {
+    name: "绝区零", sub: "米哈游 · 动作",
+    ach: "绝孝子",
+    stereo: "玩家构成与外界想象有出入，不少完全不玩二游的人也在玩。社区氛围被总结为「人少社区安稳、色」。内部存在张力：部分玩家强调「下三路」审美，排斥「高级审美」。同时「我男我也」现象引发争议——自称开服玩家的群体在女角色帖子下刷「感觉太媚宅了」。"
+  },
+  bluearchive: {
+    name: "蔚蓝档案", sub: "NEXON · 二次元",
+    ach: "BA小鬼",
+    stereo: "最出圈的刻板印象是「全是男娘」和「炼铜」。有玩家坦言：「如果不是玩得很熟的人不要让他知道你玩ba，因为现在网上对玩ba的印象给别人很差，会背上很多锅」。圈子被描述为「很差劲，全是小鬼和一些靠摸黑来黑红的二创」。刻板印象经历了从「炼铜工厂」到「韩国原神」的演变。"
+  },
+  naruto: {
+    name: "火影忍者手游", sub: "腾讯 · 格斗",
+    ach: "尿液",
+    stereo: "社区存在明显的新老对立，新玩家被贬称为「尿液」，老玩家对新玩家福利诉求的态度是「你不该把我吃过的苦也吃了」。「火批」被用来形容低龄、到处刷烂梗的玩家群体。游戏 1v1 的特性催生了独特的优越感文化，赢后摸头嘲讽是标志性行为。"
+  },
+  sanguosha: {
+    name: "三国杀", sub: "游卡桌游 · 卡牌",
+    ach: "阴兵",
+    stereo: "「杀批」是最核心的标签，指无端联想三国杀、不分场合刷好评的群体，也被视为「阴兵」的代称。存在多重鄙视链：校尉被先锋将军歧视，先锋被大将军歧视；OL 玩家自认「最正统」，看不起其他版本；身份局玩家和国战玩家互相看不起。女玩家则被标签化为「要么被当吉祥物供着，要么被默认肯定菜」。"
+  },
+  valorant: {
+    name: "无畏契约", sub: "拳头游戏 · FPS",
+    ach: "瓦学弟",
+    stereo: "「瓦学弟」是对该游戏玩家的调侃称呼，与「go 学长」（CS:GO 玩家）形成对立叙事。最突出的标签是「性压抑」。「笨蛋奶妈」事件后，整个玩家群体被贴上「赛博舔狗」标签。与 CS:GO 的对比中，瓦学弟被描述为「一旦有女声就『妈妈，妈妈』，打游戏就是为了追女人」。"
+  },
+  delta: {
+    name: "三角洲行动", sub: "琳琅天上 · 战术射击",
+    ach: "鼠鼠",
+    stereo: "「鼠鼠文化」是最有辨识度的标签。鼠鼠玩家「只搜物资」，被亲切地称为「鼠鼠」，社区发展出暗号交流来避免冲突。但鼠鼠文化正在衰落，共享监狱结束后「大家都要杀人」，游戏道德环境下降。鼠鼠进化成「杀人鼠」，加剧竞争。干员刻板印象方面，「骇爪玩家就是 CS」的说法存在。"
+  },
+  anqu: {
+    name: "暗区突围", sub: "腾讯魔方 · 硬核射击",
+    ach: "暗蛆",
+    stereo: "最突出的特征是「杀心重、无组队撤离」。游戏死亡惩罚高，黑暗森林法则盛行。「停止射击」被视为「麻醉你的药剂」，骗暗号、背刺频发。与三角洲行动形成鲜明对比：三角洲发展出了鼠鼠文化，暗区则「没有鼠文化」——曾经的「老鼠玩法」因遭玩家憎恨被官方削弱。玩家被描述为「素质参差不齐」。"
+  },
+  miniworld: {
+    name: "迷你世界", sub: "迷你玩 · 沙盒",
+    ach: "迷你狗",
+    stereo: "最核心的标签是「迷你狗」和「抄袭 MC」。玩家群体被刻板印象为「大多是小学生」。与 MC 玩家的战争持续多年，双方互称「迷你狗」「MC 痴」。「玩家素质极差」是常见评价，「跟迷你玩家说『迷你世界是抄袭的』，他们不但不承认还要骂人」的印象广为流传。也有评论指出「错的不是迷你世界这款游戏，而是那些无脑小学生」。"
+  },
+  eggy: {
+    name: "蛋仔派对", sub: "网易 · 休闲派对",
+    ach: "蛋仔小学生",
+    stereo: "「小学生游戏」是最牢固的标签。有玩家吐槽「开麦一聊天，全是小学生」。玩家群体被概括为「小学生还有女大学生和她们的舔狗」。游戏标注适用年龄「8+」，年轻用户中低龄占比极高。也有玩家反驳：「所有觉得蛋仔是小学生游戏的自己来打国一」。"
+  },
+  reverse1999: {
+    name: "重返未来 1999", sub: "深蓝互动 · 复古二次元",
+    ach: "9菜",
+    stereo: "玩家群体被描述为「和主流二游核心玩家重合度不算高，注定比较小众」。社区氛围被比作「和崩铁差不多」，存在「无脑推、拉踩」现象。一个流传的说法是「玩 9 就要玩明日方舟」。社区也涉及性别议题争议，被描述为「i 女解和麻辣仙人」之间的饭圈式对立。"
+  },
+  fifth: {
+    name: "第五人格", sub: "网易 · 非对称竞技",
+    ach: "5p",
+    stereo: "最核心的标签是「第五饭格」和「饭圈人格」。角色厨文化极度狂热，角色打榜、皮肤销量比拼、CP 粉与唯粉的全球对骂构成社区日常，有玩家感叹「靠角色厨撑起来的，没有角色厨就没有第五人格」。玩家群体被刻板印象为「低龄化严重」，有「餐券小学生」的蔑称，精神状态被调侃为「人均鱿鱼症」。游戏机制催生「人屠对立」，求生者与监管者玩家互相认为对方占便宜，屠夫玩家曾发起停氪抗议。赛后对线文化突出，戾气重，角色黑称如「调马」「尖叫婆」广为流传。"
+  }
+};
+
+const GAME_KEYS = Object.keys(GAMES);
+const ACH_COUNT = GAME_KEYS.length; // 15
+const MIHOYO_KEYS = ["genshin", "starrail", "zzz"];
+
+/* =========================================================
+   神秘成就（显示名称，解锁后显示条件）
+   ========================================================= */
+const MYSTERY_ACH = [
+  { key: "m_genshin_de",  name: "玩原神玩的",       condition: "随便乱选，导致测出原神" },
+  { key: "m_god_episode", name: "这集神了",         condition: "对非原神结果点击「不准」，重新计算后变为原神" },
+  { key: "m_launch",      name: "启动！",           condition: "第一次跳转到原神官网" },
+  { key: "m_wo_guan",     name: "我管你这你那",     condition: "触发 10% 概率、结果直接显示为原神的事件" },
+  { key: "m_thunder",     name: "天雷滚滚",         condition: "连续两次测试结果都是蔚蓝档案" },
+  { key: "m_equal",       name: "一视同仁",         condition: "最后一题选择了所有选项" },
+  { key: "m_self_abased", name: "可是我的自卑……", condition: "最后一题只选了自己测出来的那个游戏" },
+  { key: "m_mihoyo",      name: "米哈游怎么了你",   condition: "最后一题只选了原神、崩铁、绝区零三款米哈游游戏" },
+  { key: "m_only_me",     name: "唯我独尊",         condition: "最后一题选了除自己测出游戏外的全部选项" }
+];
+const MYSTERY_MAP = {};
+MYSTERY_ACH.forEach(m => { MYSTERY_MAP[m.key] = m.name; });
+
+/* =========================================================
+   题库（38 题）
+   ========================================================= */
+const QUESTIONS = [
+  { q: "你的年龄段大概是？",
+    options: [
+      { text: "小学 / 初中", scores: { miniworld: 3, eggy: 3, naruto: 2, fifth: 2 } },
+      { text: "高中 / 大学", scores: { valorant: 2, delta: 2, starrail: 2, genshin: 2 } },
+      { text: "已经工作了", scores: { sanguosha: 3, reverse1999: 2, anqu: 2 } },
+      { text: "不愿透露，但二次元浓度很高", scores: { bluearchive: 3, arknights: 2, mingchao: 2, zzz: 2 } }
+    ] },
+  { q: "抽卡保底歪了，你的第一反应是？",
+    options: [
+      { text: "骂米哈游", scores: { genshin: 3, starrail: 2, zzz: 2 } },
+      { text: "骂库洛", scores: { mingchao: 3 } },
+      { text: "我玩的游戏根本没有抽卡", scores: { valorant: 3, naruto: 3, sanguosha: 2, delta: 3, anqu: 3, miniworld: 3, eggy: 3, fifth: 2 } },
+      { text: "早就习惯了，白嫖就完事", scores: { arknights: 2, bluearchive: 2, reverse1999: 2 } }
+    ] },
+  { q: "你玩游戏会开麦吗？", pair: "voice",
+    options: [
+      { text: "经常开麦，喜欢和队友交流", pairKey: "voice_yes", scores: { valorant: 3, delta: 2, eggy: 3, miniworld: 2, fifth: 1 } },
+      { text: "只在必要的时候开麦", pairKey: "voice_sometimes", scores: { anqu: 2, sanguosha: 1 } },
+      { text: "从不主动开麦，社恐", pairKey: "voice_no", scores: { genshin: 2, starrail: 2, arknights: 2, bluearchive: 2 } },
+      { text: "我玩的游戏根本没有语音功能", pairKey: "voice_none", scores: { starrail: 3, arknights: 3, bluearchive: 3, reverse1999: 3, zzz: 2 } }
+    ] },
+  { q: "你对「抄袭」的态度是？", pair: "copy",
+    options: [
+      { text: "抄不抄无所谓，好玩就行", pairKey: "copy_ok", scores: { miniworld: 4, eggy: 2 } },
+      { text: "抄袭必须死，坚决抵制", pairKey: "copy_against", scores: { arknights: 2, genshin: 1 } },
+      { text: "二次元游戏互相借鉴很正常", pairKey: "copy_normal", scores: { mingchao: 2, bluearchive: 2, zzz: 1 } },
+      { text: "不关心，我只玩竞技", pairKey: "copy_dontcare", scores: { valorant: 2, naruto: 2, sanguosha: 2, delta: 1, fifth: 1 } }
+    ] },
+  { q: "你最多能接受在一款游戏里花多少钱？", pair: "money",
+    options: [
+      { text: "一分不花，白嫖万岁", pairKey: "money_none", scores: { arknights: 2, bluearchive: 1, miniworld: 1, eggy: 1 } },
+      { text: "月卡党，细水长流", pairKey: "money_small", scores: { genshin: 2, starrail: 2, mingchao: 2, reverse1999: 2, fifth: 1 } },
+      { text: "为了老婆 / 老公，氪就完了", pairKey: "money_medium", scores: { bluearchive: 2, zzz: 2, genshin: 2, mingchao: 1, fifth: 2 } },
+      { text: "买皮肤 / 开箱 / 抽武将", pairKey: "money_big", scores: { sanguosha: 3, valorant: 2, naruto: 1 } }
+    ] },
+  { q: "你在游戏里 PVP 输了会？", pair: "pvp",
+    options: [
+      { text: "摸头嘲讽", pairKey: "pvp_taunt", scores: { naruto: 4, fifth: 1 } },
+      { text: "骂队友", pairKey: "pvp_blame", scores: { valorant: 3, delta: 2, fifth: 1 } },
+      { text: "下一把继续", pairKey: "pvp_again", scores: { sanguosha: 2, valorant: 1 } },
+      { text: "我玩的是单机，没有 PVP", pairKey: "pvp_none", scores: { starrail: 3, arknights: 3, bluearchive: 3, reverse1999: 3, genshin: 2 } }
+    ] },
+  { q: "你会在游戏里组队吗？", pair: "team",
+    options: [
+      { text: "经常组队，和朋友一起", pairKey: "team_often", scores: { delta: 3, eggy: 2, miniworld: 2, fifth: 1 } },
+      { text: "偶尔组队，看情况", pairKey: "team_sometimes", scores: { anqu: 2, sanguosha: 2, valorant: 2 } },
+      { text: "从不组队，独狼", pairKey: "team_never", scores: { anqu: 2, genshin: 1 } },
+      { text: "我玩的游戏没有组队功能", pairKey: "team_none", scores: { starrail: 3, arknights: 3, bluearchive: 3, reverse1999: 2 } }
+    ] },
+  { q: "游戏里如果有女玩家开麦，你的反应是？",
+    options: [
+      { text: "「妈妈！」", scores: { valorant: 4 } },
+      { text: "正常打游戏，没什么特别的", scores: { anqu: 2, delta: 2, sanguosha: 1, eggy: 1 } },
+      { text: "这游戏还有女的？", scores: { naruto: 2, sanguosha: 2, miniworld: 2 } },
+      { text: "我就是女玩家，别代表我", scores: { reverse1999: 2, genshin: 1, zzz: 1, mingchao: 1, fifth: 2 } }
+    ] },
+  { q: "你觉得自己在别人眼里是什么形象？",
+    options: [
+      { text: "小学生", scores: { eggy: 3, miniworld: 3, naruto: 2, fifth: 2 } },
+      { text: "赛博舔狗", scores: { valorant: 3 } },
+      { text: "米孝子 / 米黑", scores: { genshin: 3, starrail: 2, zzz: 1 } },
+      { text: "婆罗门，玩的东西比较高贵", scores: { arknights: 3, bluearchive: 1, reverse1999: 1 } }
+    ] },
+  { q: "你平时最常在哪看游戏相关内容？",
+    options: [
+      { text: "B 站 / 米游社", scores: { genshin: 2, starrail: 2, zzz: 2, mingchao: 1 } },
+      { text: "贴吧 / 暗区", scores: { arknights: 2, sanguosha: 2, naruto: 2, mingchao: 1 } },
+      { text: "抖音 / 快手", scores: { miniworld: 2, eggy: 2, naruto: 2, delta: 1, fifth: 1 } },
+      { text: "小红书 / 微博", scores: { reverse1999: 2, bluearchive: 1, mingchao: 1, fifth: 1 } }
+    ] },
+  { q: "你觉得一款二次元游戏最重要的是什么？",
+    options: [
+      { text: "角色立绘要涩", scores: { bluearchive: 3, zzz: 2 } },
+      { text: "剧情要有深度", scores: { reverse1999: 3, arknights: 2 } },
+      { text: "战斗系统要硬核", scores: { arknights: 2, starrail: 2, zzz: 2 } },
+      { text: "角色要有男有女，平衡", scores: { mingchao: 2, genshin: 2 } }
+    ] },
+  { q: "你怎么看待游戏里的「节奏榜」？",
+    options: [
+      { text: "强度党，只看 T0", scores: { starrail: 3, arknights: 2 } },
+      { text: "无所谓，喜欢就练", scores: { bluearchive: 2, reverse1999: 2, genshin: 2, fifth: 1 } },
+      { text: "什么节奏榜，我打枪的", scores: { valorant: 2, delta: 2, anqu: 2 } },
+      { text: "抽卡游戏都是骗钱的", scores: { sanguosha: 2, miniworld: 1 } }
+    ] },
+  { q: "下面哪个词最让你破防？",
+    options: [
+      { text: "「原批」", scores: { genshin: 3 } },
+      { text: "「舟批」", scores: { arknights: 3 } },
+      { text: "「迷你狗」", scores: { miniworld: 3 } },
+      { text: "「瓦学弟」", scores: { valorant: 3 } }
+    ] },
+  { q: "你觉得自己的游戏水平怎么样？",
+    options: [
+      { text: "国服第一", scores: { naruto: 2, valorant: 2, eggy: 1, fifth: 1 } },
+      { text: "还行，能上分", scores: { delta: 2, sanguosha: 2 } },
+      { text: "纯休闲玩家", scores: { eggy: 2, miniworld: 2, reverse1999: 2 } },
+      { text: "氪金就能变强", scores: { sanguosha: 3, genshin: 1 } }
+    ] },
+  { q: "你最喜欢游戏里的哪种玩法？",
+    options: [
+      { text: "开放世界探索", scores: { genshin: 3, mingchao: 3 } },
+      { text: "塔防 / 策略", scores: { arknights: 3 } },
+      { text: "回合制战斗", scores: { starrail: 3, reverse1999: 2 } },
+      { text: "动作连招", scores: { zzz: 3, naruto: 2 } }
+    ] },
+  { q: "你觉得游戏里的「老婆 / 老公」重要吗？",
+    options: [
+      { text: "非常重要，是我的精神支柱", scores: { bluearchive: 3, genshin: 2, zzz: 1, fifth: 1 } },
+      { text: "还好，有喜欢的角色", scores: { reverse1999: 2, starrail: 2 } },
+      { text: "无所谓，我只看强度", scores: { arknights: 2, starrail: 2 } },
+      { text: "我只打枪，不谈感情", scores: { valorant: 2, delta: 2, anqu: 2 } }
+    ] },
+  { q: "你更愿意玩哪类游戏？",
+    options: [
+      { text: "二次元抽卡", scores: { genshin: 2, starrail: 2, mingchao: 2, bluearchive: 2, arknights: 2, zzz: 2, reverse1999: 2 } },
+      { text: "竞技射击", scores: { valorant: 3, delta: 2, anqu: 2 } },
+      { text: "休闲派对", scores: { eggy: 3, miniworld: 2 } },
+      { text: "卡牌 / 格斗", scores: { sanguosha: 2, naruto: 3 } }
+    ] },
+  { q: "你在游戏里最常干的事是？",
+    options: [
+      { text: "刷材料，肝", scores: { genshin: 2, starrail: 2, arknights: 2 } },
+      { text: "抽卡，赌", scores: { bluearchive: 2, genshin: 2, mingchao: 2 } },
+      { text: "打排位，上分", scores: { valorant: 3, naruto: 2, fifth: 1 } },
+      { text: "盖房子 / 玩小游戏", scores: { miniworld: 3, eggy: 2 } }
+    ] },
+  { q: "你有没有因为玩游戏被人骂过？",
+    options: [
+      { text: "有，被叫过「原批」", scores: { genshin: 3 } },
+      { text: "有，被叫过「舟批」", scores: { arknights: 3 } },
+      { text: "有，被叫过「迷你狗」", scores: { miniworld: 3 } },
+      { text: "没有，我玩的游戏没人骂", scores: { reverse1999: 1, eggy: 1 } }
+    ] },
+  { q: "你怎么看待游戏里的「白嫖」？",
+    options: [
+      { text: "白嫖才是王道", scores: { arknights: 2, bluearchive: 1, miniworld: 2, eggy: 2 } },
+      { text: "适当氪金支持游戏", scores: { genshin: 2, starrail: 2 } },
+      { text: "氪金才能变强", scores: { sanguosha: 3 } },
+      { text: "我只买皮肤", scores: { valorant: 2, naruto: 1, fifth: 1 } }
+    ] },
+  { q: "你最喜欢游戏里的哪种角色？",
+    options: [
+      { text: "可爱萌系", scores: { bluearchive: 3, eggy: 2 } },
+      { text: "帅气强力", scores: { starrail: 2, zzz: 2, genshin: 1 } },
+      { text: "有深度的反派", scores: { reverse1999: 2, arknights: 2 } },
+      { text: "我玩的是枪战，角色不重要", scores: { valorant: 2, delta: 2 } }
+    ] },
+  { q: "你觉得自己的游戏审美怎么样？",
+    options: [
+      { text: "我的审美很高级", scores: { arknights: 3 } },
+      { text: "我就喜欢涩的", scores: { bluearchive: 3, zzz: 1 } },
+      { text: "大众审美，随大流", scores: { genshin: 2, starrail: 2 } },
+      { text: "我打枪的，不看审美", scores: { valorant: 2, delta: 2 } }
+    ] },
+  { q: "你在游戏里会主动开麦说话吗？", pair: "voice",
+    options: [
+      { text: "会，开麦才有意思", pairKey: "voice_yes", scores: { valorant: 3, delta: 2, eggy: 3, miniworld: 2, fifth: 1 } },
+      { text: "看情况，不一定", pairKey: "voice_sometimes", scores: { anqu: 2, sanguosha: 1 } },
+      { text: "不会，我社恐", pairKey: "voice_no", scores: { genshin: 2, starrail: 2, arknights: 2 } },
+      { text: "这游戏没有语音，想开也开不了", pairKey: "voice_none", scores: { starrail: 3, arknights: 3, bluearchive: 3, reverse1999: 3 } }
+    ] },
+  { q: "如果有人说你玩的游戏抄袭，你会？", pair: "copy",
+    options: [
+      { text: "无所谓，好玩就行", pairKey: "copy_ok", scores: { miniworld: 4, eggy: 2 } },
+      { text: "据理力争，根本没有抄袭", pairKey: "copy_against", scores: { arknights: 2, genshin: 1 } },
+      { text: "二游互相借鉴很正常", pairKey: "copy_normal", scores: { mingchao: 2, bluearchive: 2, zzz: 1 } },
+      { text: "不关心，我只玩竞技", pairKey: "copy_dontcare", scores: { valorant: 2, naruto: 2, sanguosha: 2, fifth: 1 } }
+    ] },
+  { q: "你在游戏里一共花过多少钱？", pair: "money",
+    options: [
+      { text: "一分没花", pairKey: "money_none", scores: { arknights: 2, bluearchive: 1, miniworld: 1, eggy: 1 } },
+      { text: "几百块，月卡党", pairKey: "money_small", scores: { genshin: 2, starrail: 2, mingchao: 2, reverse1999: 2, fifth: 1 } },
+      { text: "几千块，为了角色", pairKey: "money_medium", scores: { bluearchive: 2, zzz: 2, genshin: 2, fifth: 2 } },
+      { text: "上万，氪金大佬", pairKey: "money_big", scores: { sanguosha: 3, naruto: 1 } }
+    ] },
+  { q: "你玩 PVP 输了会怎么做？", pair: "pvp",
+    options: [
+      { text: "嘲讽对手", pairKey: "pvp_taunt", scores: { naruto: 4, fifth: 1 } },
+      { text: "怪队友", pairKey: "pvp_blame", scores: { valorant: 3, delta: 2, fifth: 1 } },
+      { text: "再来一局", pairKey: "pvp_again", scores: { sanguosha: 2, valorant: 1 } },
+      { text: "我不玩 PVP", pairKey: "pvp_none", scores: { starrail: 3, arknights: 3, bluearchive: 3, reverse1999: 3 } }
+    ] },
+  { q: "你平时会和朋友一起组队玩游戏吗？", pair: "team",
+    options: [
+      { text: "经常组队", pairKey: "team_often", scores: { delta: 3, eggy: 2, miniworld: 2, fifth: 1 } },
+      { text: "偶尔组队", pairKey: "team_sometimes", scores: { anqu: 2, sanguosha: 2, valorant: 2 } },
+      { text: "基本不组队", pairKey: "team_never", scores: { anqu: 2, genshin: 1 } },
+      { text: "我玩的游戏没有组队", pairKey: "team_none", scores: { starrail: 3, arknights: 3, bluearchive: 3, reverse1999: 2 } }
+    ] },
+  { q: "你觉得游戏里的「剧情」重要吗？",
+    options: [
+      { text: "非常重要，我是剧情党", scores: { genshin: 2, starrail: 2, reverse1999: 3, arknights: 2 } },
+      { text: "一般，能跳过就跳过", scores: { mingchao: 2, zzz: 2, valorant: 1, fifth: 1 } },
+      { text: "不重要，我只玩玩法", scores: { miniworld: 2, eggy: 2, sanguosha: 2 } },
+      { text: "我玩的游戏根本没有剧情", scores: { valorant: 2, delta: 2, anqu: 2 } }
+    ] },
+  { q: "你会因为「角色好看」入坑一个游戏吗？",
+    options: [
+      { text: "会，角色就是一切", scores: { bluearchive: 3, zzz: 2, genshin: 2, fifth: 1 } },
+      { text: "会参考，但不是决定因素", scores: { mingchao: 2, starrail: 2 } },
+      { text: "不会，我看玩法", scores: { arknights: 2, valorant: 2 } },
+      { text: "我玩的是枪战，角色丑无所谓", scores: { valorant: 2, delta: 2 } }
+    ] },
+  { q: "你在游戏里会「肝」吗？",
+    options: [
+      { text: "每天在线几小时", scores: { genshin: 2, starrail: 2, arknights: 2, fifth: 1 } },
+      { text: "做完日常就下", scores: { mingchao: 2, zzz: 2 } },
+      { text: "想起来才玩", scores: { eggy: 2, miniworld: 2, reverse1999: 2 } },
+      { text: "我玩的是竞技，随时上号", scores: { valorant: 2, delta: 2 } }
+    ] },
+  { q: "你觉得游戏里的「社交」重要吗？",
+    options: [
+      { text: "重要，喜欢和人一起玩", scores: { eggy: 3, miniworld: 2, delta: 2, fifth: 1 } },
+      { text: "一般，偶尔交流", scores: { anqu: 2, sanguosha: 2 } },
+      { text: "不重要，我一个人玩", scores: { genshin: 2, starrail: 2, arknights: 2, bluearchive: 2 } },
+      { text: "我玩的游戏没有社交", scores: { starrail: 3, arknights: 3, bluearchive: 2 } }
+    ] },
+  { q: "你玩游戏会看攻略吗？",
+    options: [
+      { text: "开服就看，研究配队", scores: { starrail: 3, arknights: 3, genshin: 2 } },
+      { text: "打不过才看", scores: { mingchao: 2, zzz: 2, delta: 1, fifth: 1 } },
+      { text: "从不看，自己摸索", scores: { eggy: 2, miniworld: 2, valorant: 1 } },
+      { text: "看直播比看攻略多", scores: { naruto: 2, valorant: 2 } }
+    ] },
+  { q: "你觉得游戏里「氪金」和「技术」哪个重要？",
+    options: [
+      { text: "技术重要", scores: { valorant: 3, naruto: 2, delta: 2, fifth: 1 } },
+      { text: "氪金重要", scores: { sanguosha: 3, genshin: 1 } },
+      { text: "都重要", scores: { starrail: 2, arknights: 2 } },
+      { text: "我白嫖，无所谓", scores: { bluearchive: 2, miniworld: 2, eggy: 2 } }
+    ] },
+  { q: "你玩游戏最看重什么？",
+    options: [
+      { text: "画面和美术", scores: { genshin: 2, mingchao: 2, zzz: 2, reverse1999: 2, fifth: 1 } },
+      { text: "玩法创新", scores: { arknights: 2, starrail: 2 } },
+      { text: "竞技公平", scores: { valorant: 3, naruto: 2 } },
+      { text: "免费白嫖", scores: { miniworld: 2, eggy: 2 } }
+    ] },
+  { q: "你会为了游戏里的角色和别人争论吗？",
+    options: [
+      { text: "会，我的角色不容诋毁", scores: { fifth: 3, genshin: 1, bluearchive: 1 } },
+      { text: "偶尔，看到离谱的会反驳", scores: { fifth: 2, mingchao: 1, starrail: 1 } },
+      { text: "不会，角色而已", scores: {} },
+      { text: "我玩的游戏没什么角色", scores: { valorant: 1, delta: 1, sanguosha: 1 } }
+    ] },
+  { q: "游戏里如果分为对立的两方，你会怎么选？",
+    options: [
+      { text: "坚定站一边，和对面势不两立", scores: { fifth: 3 } },
+      { text: "两边都玩，觉得各有各的难处", scores: { fifth: 1 } },
+      { text: "只玩自己这边，不关心对面", scores: { anqu: 1, valorant: 1 } },
+      { text: "我玩的游戏没有阵营对立", scores: { genshin: 1, starrail: 1 } }
+    ] },
+  { q: "游戏对局结束后，你会留在聊天频道吗？",
+    options: [
+      { text: "会，经常赛后和人对线", scores: { fifth: 3, valorant: 1, naruto: 1 } },
+      { text: "偶尔看两眼，不说话", scores: { fifth: 1, sanguosha: 1 } },
+      { text: "直接退，不感兴趣", scores: {} },
+      { text: "我玩的游戏没有赛后聊天", scores: { genshin: 1, starrail: 1, arknights: 1 } }
+    ] },
+  { q: "【多选】你看哪个游戏的玩家最不顺眼？", multi: true,
+    options: [
+      { text: "原神", key: "genshin", scores: {} },
+      { text: "鸣潮", key: "mingchao", scores: {} },
+      { text: "崩坏：星穹铁道", key: "starrail", scores: {} },
+      { text: "明日方舟", key: "arknights", scores: {} },
+      { text: "绝区零", key: "zzz", scores: {} },
+      { text: "蔚蓝档案", key: "bluearchive", scores: {} },
+      { text: "火影忍者手游", key: "naruto", scores: {} },
+      { text: "三国杀", key: "sanguosha", scores: {} },
+      { text: "无畏契约", key: "valorant", scores: {} },
+      { text: "三角洲行动", key: "delta", scores: {} },
+      { text: "暗区突围", key: "anqu", scores: {} },
+      { text: "迷你世界", key: "miniworld", scores: {} },
+      { text: "蛋仔派对", key: "eggy", scores: {} },
+      { text: "重返未来 1999", key: "reverse1999", scores: {} },
+      { text: "第五人格", key: "fifth", scores: {} }
+    ] }
+];
+
+/* =========================================================
+   常量 & DOM
+   ========================================================= */
+const GAME_URL = "https://ys.mihoyo.com/";
+const LS_KEY = "stereotype_quiz_achievements";
+const LS_LAST_RESULT = "stereotype_last_result";
+
+const screens = {
+  start:   document.getElementById("start-screen"),
+  quiz:    document.getElementById("quiz-screen"),
+  loading: document.getElementById("loading-screen"),
+  result:  document.getElementById("result-screen")
+};
+
+const el = {
+  progressFill:  document.getElementById("progress-fill"),
+  progressText:  document.getElementById("progress-text"),
+  questionText:  document.getElementById("question-text"),
+  options:       document.getElementById("options"),
+  multiHint:     document.getElementById("multi-hint"),
+  btnSubmitMulti:document.getElementById("btn-submit-multi"),
+  loadingText:   document.getElementById("loading-text"),
+  loadingSub:    document.getElementById("loading-sub"),
+  resultGame:    document.getElementById("result-game"),
+  resultSub:     document.getElementById("result-sub"),
+  resultStereo:  document.getElementById("result-stereo"),
+  achievementToast: document.getElementById("achievement-toast"),
+  achName:       document.getElementById("ach-name"),
+  achProgress:   document.getElementById("ach-progress"),
+  hateBox:       document.getElementById("hate-box"),
+  askAccuracy:   document.getElementById("ask-accuracy"),
+  thanksText:    document.getElementById("thanks-text"),
+  restartWrap:   document.getElementById("restart-wrap"),
+  btnAccurate:   document.getElementById("btn-accurate"),
+  btnInaccurate: document.getElementById("btn-inaccurate"),
+  btnRestart:    document.getElementById("btn-restart"),
+  btnStart:      document.getElementById("btn-start"),
+  btnViewAchStart:  document.getElementById("btn-view-ach-start"),
+  btnViewAchResult: document.getElementById("btn-view-ach-result"),
+  modal:         document.getElementById("achievement-modal"),
+  modalClose:    document.getElementById("modal-close"),
+  achievementList: document.getElementById("achievement-list")
+};
+
+const state = {
+  qIndex: 0,
+  scores: {},
+  times: [],
+  optionIdx: [],
+  pairAnswers: {},
+  pairConflicts: 0,
+  qStart: 0,
+  isGenshinResult: false,
+  hateList: [],
+  hateKeys: [],
+  multiSelected: new Set(),
+  pendingMystery: [],
+  resultShown: false
+};
+
+/* =========================================================
+   成就系统
+   ========================================================= */
+function loadAchievements() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+function saveAchievements(arr) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch (e) {}
+}
+function unlockAchievement(key) {
+  let list = loadAchievements();
+  const isNew = !list.includes(key);
+  if (isNew) list.push(key);
+
+  const gameCount = GAME_KEYS.filter(k => list.includes(k)).length;
+  let gotGod = false;
+  if (gameCount >= ACH_COUNT && !list.includes("__god__")) {
+    list.push("__god__");
+    gotGod = true;
+  }
+  saveAchievements(list);
+  return { isNew, gotGod, total: gameCount };
+}
+
+/* =========================================================
+   成就弹窗
+   ========================================================= */
+function renderAchievements() {
+  const list = loadAchievements();
+  const unlockedSet = new Set(list.filter(k => k !== "__god__"));
+  const godUnlocked = list.includes("__god__");
+  const gameUnlockedCount = GAME_KEYS.filter(k => unlockedSet.has(k)).length;
+  const mysteryUnlockedCount = MYSTERY_ACH.filter(m => unlockedSet.has(m.key)).length;
+
+  let html = '<div class="modal-progress">游戏成就 <b style="color:#fde68a;">' + gameUnlockedCount + '</b> / ' + ACH_COUNT +
+             '　·　神秘成就 <b style="color:#e9d5ff;">' + mysteryUnlockedCount + '</b> / ' + MYSTERY_ACH.length;
+  if (godUnlocked) html += '<br>👑 你已集齐全部游戏成就，达成「神人」！';
+  html += '</div>';
+
+  // ===== 游戏成就 =====
+  html += '<div class="modal-section-title">🎮 游戏成就</div>';
+  html += '<div class="ach-grid">';
+
+  html += '<div class="ach-item ach-god-item ' + (godUnlocked ? 'unlocked' : 'locked') + '">';
+  html += '<div class="ach-icon">' + (godUnlocked ? '<span class="god-emoji">👑</span>' : '🔒') + '</div>';
+  html += '<div class="ach-info">';
+  html += '<div class="ach-title">' + (godUnlocked ? '神人' : '？？？') + '</div>';
+  html += '<div class="ach-game">集齐全部 ' + ACH_COUNT + ' 个游戏成就</div>';
+  html += '</div></div>';
+
+  GAME_KEYS.forEach(key => {
+    const g = GAMES[key];
+    const unlocked = unlockedSet.has(key);
+    html += '<div class="ach-item ' + (unlocked ? 'unlocked' : 'locked') + '">';
+    html += '<div class="ach-icon">' + (unlocked ? '🏆' : '🔒') + '</div>';
+    html += '<div class="ach-info">';
+    html += '<div class="ach-title">' + (unlocked ? g.ach : '？？？') + '</div>';
+    html += '<div class="ach-game">' + g.name + '</div>';
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+
+  // ===== 神秘成就 =====
+  html += '<div class="modal-section-title" style="margin-top:18px;">🔮 神秘成就</div>';
+  html += '<div class="ach-grid">';
+  MYSTERY_ACH.forEach(m => {
+    const unlocked = unlockedSet.has(m.key);
+    html += '<div class="ach-item mystery-item ' + (unlocked ? 'unlocked' : 'locked') + '">';
+    html += '<div class="ach-icon">' + (unlocked ? '✨' : '🔮') + '</div>';
+    html += '<div class="ach-info">';
+    html += '<div class="ach-title">' + m.name + '</div>';
+    html += '<div class="ach-game">' + (unlocked ? m.condition : '条件未知') + '</div>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  el.achievementList.innerHTML = html;
+}
+
+function openAchievementModal() {
+  renderAchievements();
+  el.modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeAchievementModal() {
+  el.modal.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+/* =========================================================
+   工具
+   ========================================================= */
+function show(name) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  const target = screens[name];
+  target.classList.remove("active");
+  void target.offsetWidth;
+  target.classList.add("active");
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+function goGenshin() {
+  unlockAchievement("m_launch");
+  window.location.href = GAME_URL;
+}
+
+/* =========================================================
+   答题
+   ========================================================= */
+function startQuiz() {
+  state.qIndex = 0;
+  state.scores = {};
+  state.times = [];
+  state.optionIdx = [];
+  state.pairAnswers = {};
+  state.pairConflicts = 0;
+  state.isGenshinResult = false;
+  state.hateList = [];
+  state.hateKeys = [];
+  state.multiSelected = new Set();
+  state.pendingMystery = [];
+  state.resultShown = false;
+  show("quiz");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[state.qIndex];
+  el.progressFill.style.width = (state.qIndex / QUESTIONS.length * 100) + "%";
+  el.progressText.textContent = (state.qIndex + 1) + " / " + QUESTIONS.length;
+  el.questionText.textContent = q.q;
+
+  if (q.multi) {
+    el.multiHint.classList.remove("hidden");
+    el.btnSubmitMulti.classList.remove("hidden");
+    state.multiSelected = new Set();
+  } else {
+    el.multiHint.classList.add("hidden");
+    el.btnSubmitMulti.classList.add("hidden");
+  }
+
+  el.options.innerHTML = "";
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.type = "button";
+    const span = document.createElement("span");
+    span.textContent = opt.text;
+    btn.appendChild(span);
+    if (q.multi) {
+      btn.addEventListener("click", () => toggleMulti(i, btn));
+    } else {
+      btn.addEventListener("click", () => selectOption(i));
+    }
+    el.options.appendChild(btn);
+  });
+
+  state.qStart = performance.now();
+}
+
+function toggleMulti(i, btn) {
+  if (state.multiSelected.has(i)) {
+    state.multiSelected.delete(i);
+    btn.classList.remove("multi-selected");
+  } else {
+    state.multiSelected.add(i);
+    btn.classList.add("multi-selected");
+  }
+}
+
+function selectOption(optIdx) {
+  const dt = performance.now() - state.qStart;
+  state.times.push(dt);
+  state.optionIdx.push(optIdx);
+
+  const q = QUESTIONS[state.qIndex];
+  const opt = q.options[optIdx];
+
+  for (const key in opt.scores) {
+    state.scores[key] = (state.scores[key] || 0) + opt.scores[key];
+  }
+
+  if (q.pair && opt.pairKey) {
+    if (state.pairAnswers[q.pair] === undefined) {
+      state.pairAnswers[q.pair] = opt.pairKey;
+    } else if (state.pairAnswers[q.pair] !== opt.pairKey) {
+      state.pairConflicts++;
+    }
+  }
+
+  state.qIndex++;
+  if (state.qIndex >= QUESTIONS.length) finishQuiz();
+  else renderQuestion();
+}
+
+function submitMulti() {
+  if (state.multiSelected.size === 0) {
+    alert("请至少选择一个游戏（也可以选你玩的那个）");
+    return;
+  }
+  const q = QUESTIONS[state.qIndex];
+  state.hateKeys = Array.from(state.multiSelected).map(i => q.options[i].key);
+  state.hateList = state.hateKeys.map(k => GAMES[k].name);
+
+  const dt = performance.now() - state.qStart;
+  state.times.push(dt);
+  state.optionIdx.push(-1);
+
+  state.qIndex++;
+  if (state.qIndex >= QUESTIONS.length) finishQuiz();
+  else renderQuestion();
+}
+
+/* =========================================================
+   结算
+   ========================================================= */
+function finishQuiz() {
+  el.progressFill.style.width = "100%";
+
+  const answeredTimes = state.times.slice(0, -1);
+  const total = answeredTimes.reduce((a, b) => a + b, 0);
+  const avg = total / Math.max(1, answeredTimes.length);
+
+  const counts = {};
+  state.optionIdx.forEach(i => { if (i >= 0) counts[i] = (counts[i] || 0) + 1; });
+  const maxSame = Math.max(0, ...Object.values(counts));
+
+  const isSpam = (state.pairConflicts >= 2) || (avg < 400) || (total < 13000) || (maxSame >= 33);
+
+  state.pendingMystery = [];
+  let resultKey;
+
+  if (isSpam) {
+    resultKey = "genshin";
+    state.pendingMystery.push("m_genshin_de");
+  } else if (Math.random() < 0.10) {
+    resultKey = "genshin";
+    state.pendingMystery.push("m_wo_guan");
+  } else {
+    let best = "genshin", bestScore = -1;
+    for (const k in state.scores) {
+      if (state.scores[k] > bestScore) { bestScore = state.scores[k]; best = k; }
+    }
+    if (bestScore <= 0) {
+      const keys = GAME_KEYS.filter(k => k !== "genshin");
+      best = keys[Math.floor(Math.random() * keys.length)];
+    }
+    resultKey = best;
+  }
+
+  const delay = isSpam ? 300 : (1000 + Math.random() * 3000);
+  el.loadingText.textContent = "正在分析你的游戏人格……";
+  el.loadingSub.textContent = "";
+  show("loading");
+  setTimeout(() => showResult(resultKey), delay);
+}
+
+/* =========================================================
+   展示结果
+   ========================================================= */
+function showResult(key) {
+  const g = GAMES[key];
+  state.isGenshinResult = (key === "genshin");
+
+  el.resultGame.textContent = g.name;
+  el.resultSub.textContent = g.sub;
+  el.resultStereo.textContent = g.stereo;
+
+  const newMysteries = [];
+
+  state.pendingMystery.forEach(k => {
+    if (unlockAchievement(k).isNew) newMysteries.push(k);
+  });
+  state.pendingMystery = [];
+
+  if (!state.resultShown) {
+    state.resultShown = true;
+
+    // 天雷滚滚
+    let prev = null;
+    try { prev = localStorage.getItem(LS_LAST_RESULT); } catch (e) {}
+    if (key === "bluearchive" && prev === "bluearchive") {
+      if (unlockAchievement("m_thunder").isNew) newMysteries.push("m_thunder");
+    }
+    try { localStorage.setItem(LS_LAST_RESULT, key); } catch (e) {}
+
+    const hk = state.hateKeys || [];
+    const hateSet = new Set(hk);
+
+    if (hk.length === GAME_KEYS.length) {
+      if (unlockAchievement("m_equal").isNew) newMysteries.push("m_equal");
+    }
+    if (hk.length === MIHOYO_KEYS.length && MIHOYO_KEYS.every(k => hateSet.has(k))) {
+      if (unlockAchievement("m_mihoyo").isNew) newMysteries.push("m_mihoyo");
+    }
+    if (hk.length === 1 && hk[0] === key) {
+      if (unlockAchievement("m_self_abased").isNew) newMysteries.push("m_self_abased");
+    }
+    if (hk.length === GAME_KEYS.length - 1 && !hateSet.has(key)) {
+      if (unlockAchievement("m_only_me").isNew) newMysteries.push("m_only_me");
+    }
+  }
+
+  const res = unlockAchievement(key);
+  el.achName.innerHTML = "【" + g.ach + "】" + "<small>" + g.name + "玩家</small>";
+  let progText = "已收集成就 " + res.total + " / " + ACH_COUNT;
+  if (res.isNew) progText += " · 新成就解锁！";
+  el.achProgress.innerHTML = progText;
+
+  const list = loadAchievements();
+  if (list.includes("__god__")) {
+    el.achProgress.innerHTML += '<br><span class="god-badge">👑 神人 · 已集齐全部游戏</span>';
+  }
+
+  if (newMysteries.length > 0) {
+    const names = newMysteries.map(k => MYSTERY_MAP[k]).filter(Boolean);
+    if (names.length > 0) {
+      el.achProgress.innerHTML += '<br><span class="mystery-badge">🔮 神秘成就：' + names.join("、") + '</span>';
+    }
+  }
+
+  if (state.hateList && state.hateList.length > 0) {
+    el.hateBox.classList.remove("hidden");
+    el.hateBox.innerHTML = "<b>👀 你看最不顺眼的玩家：</b><br>" + state.hateList.join("、");
+  } else {
+    el.hateBox.classList.add("hidden");
+  }
+
+  el.askAccuracy.classList.add("hidden");
+  el.thanksText.classList.add("hidden");
+  el.restartWrap.classList.add("hidden");
+
+  show("result");
+
+  setTimeout(() => {
+    el.askAccuracy.classList.remove("hidden");
+  }, 800);
+}
+
+/* =========================================================
+   事件绑定
+   ========================================================= */
+el.btnStart.addEventListener("click", startQuiz);
+el.btnSubmitMulti.addEventListener("click", submitMulti);
+el.btnViewAchStart.addEventListener("click", openAchievementModal);
+el.btnViewAchResult.addEventListener("click", openAchievementModal);
+el.modalClose.addEventListener("click", closeAchievementModal);
+el.modal.addEventListener("click", (e) => {
+  if (e.target === el.modal) closeAchievementModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !el.modal.classList.contains("hidden")) {
+    closeAchievementModal();
+  }
+});
+
+el.btnAccurate.addEventListener("click", () => {
+  if (state.isGenshinResult) { goGenshin(); return; }
+  el.askAccuracy.classList.add("hidden");
+  el.thanksText.classList.remove("hidden");
+  el.restartWrap.classList.remove("hidden");
+});
+
+el.btnInaccurate.addEventListener("click", () => {
+  if (state.isGenshinResult) { goGenshin(); return; }
+  el.askAccuracy.classList.add("hidden");
+  el.loadingText.textContent = "正在重新计算……";
+  el.loadingSub.textContent = "算法正在重新评估你的游戏人格";
+  show("loading");
+  setTimeout(() => {
+    state.pendingMystery.push("m_god_episode");
+    showResult("genshin");
+  }, 1500 + Math.random() * 1500);
+});
+
+el.btnRestart.addEventListener("click", startQuiz);
+</script>
+</body>
+</html>
